@@ -9,7 +9,7 @@ import { ActiveThemeProvider } from "@/components/active-theme";
 import LayoutClient from "@/components/layout-client"; 
 
 export const metadata: Metadata = {
-  title: "Gauge Management System",
+  title: "Task Management",
   description:
     "A fully responsive analytics dashboard featuring dynamic charts, interactive tables, a collapsible sidebar, and a light/dark mode theme switcher.",
 };
