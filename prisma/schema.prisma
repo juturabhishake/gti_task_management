@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model AccessTypes {
+  id          Int    @id(map: "PK_AccessTypes") @default(autoincrement())
+  access_type String @db.VarChar(50)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ErrorLogs {
+  ID         Int     @default(autoincrement())
+  ErrorValue String? @db.VarChar(Max)
+  ERRORMSG   String? @db.VarChar(Max)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model M_Department {
+  DeptID     Int     @default(autoincrement())
+  Department String  @db.VarChar(50)
+  Section    String  @db.VarChar(50)
+  Active     String? @default("Y", map: "DF__M_Departm__Activ__49C3F6B7") @db.Char(1)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model PageRoleAccess {
+  id      Int     @default(autoincrement())
+  empId   String? @db.VarChar(255)
+  page_id Int?
+  access  Int?
+
+  @@ignore
+}
+
+model Pages {
+  id           Int     @id(map: "PK_Pages") @default(autoincrement())
+  page         String? @db.VarChar(Max)
+  url          String? @db.VarChar(Max)
+  access_types String? @db.VarChar(Max)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Params {
+  Id       Int     @default(autoincrement())
+  SP_Name  String? @db.VarChar(200)
+  XMLValue String? @db.Xml
+
+  @@ignore
+}
+
+model ProductMatrix {
+  Product_Id        Int       @id(map: "PK_ProductMatrix") @default(autoincrement())
+  Project           String?   @db.VarChar(255)
+  Status            String?   @db.VarChar(20)
+  Customer          String?   @db.VarChar(255)
+  CustLocation      String?   @db.VarChar(255)
+  CustCity          String?   @db.VarChar(255)
+  WHLocation        String?   @db.VarChar(255)
+  DeliveryLoc       String?   @db.VarChar(255)
+  PartDesc          String?   @db.VarChar(255)
+  CastRR            Int?
+  MachRR            Int?
+  AssyRR            Int?
+  Location          String?   @db.VarChar(255)
+  Cast_PartNo       String?   @db.VarChar(255)
+  Cast_Dwg_Rev      String?   @db.VarChar(5)
+  Cast_Part_Rev     String?   @db.VarChar(5)
+  Cast_Wt           Float?
+  Cast_Appr         String?   @db.VarChar(10)
+  Mach_PartNo       String?   @db.VarChar(255)
+  Mach_Dwg_Rev      String?   @db.VarChar(5)
+  Mach_Part_Rev     String?   @db.VarChar(5)
+  Mach_Wt           Float?
+  Mach_Appr         String?   @db.VarChar(10)
+  Assy_PartNo       String?   @db.VarChar(255)
+  Assy_Dwg_Rev      String?   @db.VarChar(5)
+  Assy_Part_Rev     String?   @db.VarChar(5)
+  Assy_Wt           Float?
+  Assy_Appr         String?   @db.VarChar(10)
+  Ship_PartNo       String?   @db.VarChar(255)
+  HS_PartNo         String?   @db.VarChar(255)
+  Proj_Status       String?   @db.VarChar(10)
+  SOP_Date          DateTime? @db.DateTime
+  Pmpd              String?   @db.VarChar(50)
+  Saletype          String?   @db.VarChar(5)
+  InstallCapa       Int?
+  Boxqty            Int?
+  Material          String?   @db.VarChar(255)
+  Matl_Rev          String?   @db.VarChar(255)
+  Cust_Material     String?   @db.VarChar(50)
+  Cust_Material_Rev String?   @db.VarChar(10)
+  Pkg_Wt            Decimal?  @db.Decimal(18, 3)
+  CreatedDate       DateTime? @default(now(), map: "CDF_Date") @db.DateTime
+  CreatedBy         String?   @db.VarChar(10)
+  UpdatedDate       DateTime? @db.DateTime
+  UpdatedBy         String?   @db.VarChar(10)
+}
+
+model ShopLocations {
+  ShopID       Int    @id(map: "PK__ShopLoca__67C556299E1EBB23") @default(autoincrement())
+  LocationName String @db.VarChar(100)
+}
+
+model UserMaster {
+  UserID      Int      @id(map: "PK_UserMaster") @default(autoincrement())
+  EmployeeId  String   @db.VarChar(10)
+  Username    String   @db.VarChar(200)
+  Password    String   @db.NVarChar(200)
+  CreatedDate DateTime @default(now(), map: "DF_UserMaster_CreatedDate") @db.DateTime
+  CreatedBy   String?  @db.VarChar(200)
+  IsActive    Int      @default(1, map: "DF_UserMaster_IsActive")
+  AuthMode    String?  @db.VarChar(50)
+  Department  String?  @db.NVarChar(50)
+  Position    String?  @db.NVarChar(50)
+  Section     String?  @db.VarChar(50)
+  Designation String?  @db.VarChar(Max)
+}

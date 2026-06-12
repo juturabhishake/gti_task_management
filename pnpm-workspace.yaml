@@ -1,0 +1,10 @@
+allowBuilds:
+  '@prisma/client': false
+  '@prisma/engines': false
+  '@tailwindcss/oxide': false
+  core-js: false
+  prisma: false
+  sharp: false
+  unrs-resolver: false
+onlyBuiltDependencies:
+  - sharp
