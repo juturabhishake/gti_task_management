@@ -19,6 +19,8 @@ import {
   IconSettings,
   IconUsers,
   IconChevronRight,
+  IconTree,
+  IconHierarchy2,
   IconStatusChange,
   IconPresentationAnalytics,
   IconChevronDown,
@@ -85,163 +87,9 @@ const data = {
       ],
     },
     {
-      title: "Gauges",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        {
-          title: "Add Maintenance",
-          icon: IconFileWord,
-          url: "/gauge_management_system/entry",
-        },
-        {
-          title: "Maintenance",
-          icon: IconDatabase,
-          url: "/gauge_management_system/view",
-        },
-        {
-          title: "Tasks",
-          icon: IconDatabase,
-          url: "/gms_tasks_view",
-        },
-        {
-          title: "Gauge Instrument Master",
-          icon: IconDatabase,
-          url: "/GaugeInstrumentMaster_View",
-        }
-      ],
-    },
-    {
-      title: "Report",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        {
-          title: "Evalute Due List",
-          icon: IconDatabase,
-          url: "/calibration_report_form/view",
-        },
-        {
-          title: "Gauge History",
-          icon: IconDatabase,
-          url: "/calibration_report_form/GaugeHistory",
-        },
-        {
-          title: "Gauge Analytics",
-          icon: IconDatabase,
-          url: "/calibration_report_form/gauge_analytics",
-        },
-        {
-          title: "Monthly Report (Person Wise)",
-          icon: IconDatabase,
-          url: "/calibration_report_form/monthly_report",
-        },
-      ],
-    },
-    {
-      title: "Upload",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        {
-          title: "Upload Gauges",
-          icon: IconFileWord,
-          url: "/gauge_management_system/upload_gms",
-        },
-        {
-          title: "Upload Scrap",
-          icon: IconFileWord,
-          url: "/calibration_report_form/gauge_upload",
-        },
-      ],
-    },
-    {
-      title: "Calibration Plan",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        {
-          title: "Monthly Plan",
-          icon: IconDatabase,
-          url: "/calibration_report_form/monthly_plan",
-        },
-        {
-          title: "Overdue List",
-          icon: IconDatabase,
-          url: "/calibration_report_form/overdue",
-        },
-        {
-          title: "Send to Calibration",
-          icon: IconDatabase,
-          url: "/calibration_report_form/send_to_calibration",
-        },
-        {
-          title: "Completed Status",
-          icon: IconDatabase,
-          url: "/calibration_report_form/completed_status",
-        },
-        {
-          title: "Gauge Movement",
-          icon: IconDatabase,
-          url: "/calibration_report_form/gauge_movement",
-        },
-      ],
-    },
-    {
-      title: "Approvals",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        {
-          title: "Gauge Approve List",
-          icon: IconDatabase,
-          url: "/calibration_report_form/gauge_approve_list",
-        },
-        // {
-        //   title: "Tech. Approval List",
-        //   icon: IconDatabase,
-        //   url: "/calibration_report_form/tech_approval_list",
-        // },
-        {
-          title: "Tech. Approvals",
-          url: "#",
-          icon: IconFolder,
-          items: [
-            {
-              title: "Review List",
-              icon: IconDatabase,
-              url: "/calibration_report_form/tech_approval_list/review_list",
-            },
-            {
-              title: "Approval List",
-              icon: IconDatabase,
-              url: "/calibration_report_form/tech_approval_list/approval_list",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: "External Calibration",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        {
-          title: "Entry",
-          icon: IconDatabase,
-          url: "/external_calibration/entry",
-        },
-        {
-          title: "Link to Ext. Calibration",
-          icon: IconDatabase,
-          url: "/external_calibration/link_to_certificateno",
-        },
-        {
-          title: "Ext. Calibration List",
-          icon: IconDatabase,
-          url: "/external_calibration/list",
-        },
-      ],
+      title: "Hierarchy",
+      url: "/admin/hierarchy",
+      icon: IconHierarchy2,
     },
     //   title: "Equipment Breakdown and Repair Form",
     //   url: "#",
