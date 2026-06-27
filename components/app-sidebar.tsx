@@ -19,10 +19,12 @@ import {
   IconSettings,
   IconUsers,
   IconChevronRight,
+  IconSitemap,
   IconTree,
   IconHierarchy2,
   IconStatusChange,
   IconPresentationAnalytics,
+  IconBriefcase,
   IconChevronDown,
 } from "@tabler/icons-react";
 
@@ -86,10 +88,32 @@ const data = {
         },
       ],
     },
+    // {
+    //   title: "Hierarchy",
+    //   url: "/admin/hierarchy",
+    //   icon: IconHierarchy2,
+    // },
+    // {
+    //   title: "Hierarchy Workspace",
+    //   url: "/admin/workspace",
+    //   icon: IconHierarchy2,
+    // },
     {
-      title: "Hierarchy",
-      url: "/admin/hierarchy",
-      icon: IconHierarchy2,
+      title: "Administration",
+      url: "#",
+      icon: IconSettings,
+      items: [
+        {
+          title: "Workspace",
+          url: "/admin/workspace",
+          icon: IconSitemap,
+        },
+        {
+          title: "Hierarchy",
+          url: "/admin/hierarchy",
+          icon: IconDatabase,
+        },
+      ]
     },
     //   title: "Equipment Breakdown and Repair Form",
     //   url: "#",
