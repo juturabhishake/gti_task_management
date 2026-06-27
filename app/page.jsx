@@ -39,7 +39,7 @@ export default function Home() {
           setStatus("success");
 
           setTimeout(() => {
-              window.location.href = "/admin/hierarchy";
+              window.location.href = "/admin/workspace";
           }, 3000);
       }
       else {

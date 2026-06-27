@@ -5,7 +5,9 @@ import {
   RefreshCw, ZoomIn, ZoomOut, Info, Maximize2, Minimize2,
   Search, Plus, Trash2, Pencil, Check, X
 } from 'lucide-react';
-
+import { useAccessCheck } from '@/lib/useAccessCheck';
+import { useAdminAccessCheck } from "@/lib/checkAdmin";
+const PAGE_ID_FOR_THIS_FORM = 2035;
 const CustomCombobox = ({ options, value, onChange, placeholder, theme }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -103,6 +105,15 @@ const SubmitButton = ({ state, defaultText }) => (
 );
 
 export default function HierarchyExplorer() {
+  const { isLoading: isAccessLoading, hasAccess, accessLevel } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
+  const { hasAccess: isAdmin, isLoading: accessLoading } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
+  const level = Number(accessLevel || 0);
+  const canViewHoverActions = level === 2 || level === 3; 
+  const canAddNode = level === 2 || level === 3;          
+  const canEditNode = level === 3;                        
+  const canDeleteNode = level === 3;                      
+  const canRightClickCreate = level === 3;
+  const canModifyHierarchy = isAdmin;
   const [treeData, setTreeData] = useState([]);
   const [options, setOptions] = useState([]);
   const [userCatalog, setUserCatalog] = useState([]);
@@ -1099,6 +1110,9 @@ export default function HierarchyExplorer() {
   };
 
   const handleDeleteNode = async (node) => {
+    // const confirmDelete = window.confirm(`Are you sure you want to delete this ${node.type === 'dept' ? 'department' : node.type}?`);
+    const confirmDelete = window.confirm(`Are you sure you want to delete this ${node.type === 'dept' ? 'Department' : node.type.toUpperCase()}?\n\nName: ${node.label || "(Empty)"}${node.countText ? `\nDetails: ${node.countText}` : ""}`);
+    if (!confirmDelete) return;
     let typeStr = "";
     if (node.type === 'group') typeStr = "Group";
     else if (node.type === 'dept') typeStr = "Department";
@@ -1531,7 +1545,7 @@ export default function HierarchyExplorer() {
                     </>
                   )}
 
-                  {hoveredNodeId === node.id && !isEditing && !node.isNew && (
+                  {canViewHoverActions && hoveredNodeId === node.id && !isEditing && !node.isNew && (
                     <foreignObject x={-60} y={-65} width={120} height={40}>
                       <div 
                         className="flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 border shadow-xl mx-auto w-fit"
@@ -1541,14 +1555,16 @@ export default function HierarchyExplorer() {
                           animation: 'fadeIn 0.2s ease-out'
                         }}
                       >
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleEditInit(node); }} 
-                          className="p-1 transition-colors hover:text-blue-500 cursor-pointer"
-                          style={{ color: mutedText }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        {node.type !== 'subcategory' && node.type !== 'user' && (
+                        {canEditNode && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleEditInit(node); }} 
+                            className="p-1 transition-colors hover:text-blue-500 cursor-pointer"
+                            style={{ color: mutedText }}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          )}
+                        {canAddNode && node.type !== 'subcategory' && node.type !== 'user' && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleCreateNodeInline(node); }} 
                             className="p-1 transition-colors hover:text-green-500 cursor-pointer"
@@ -1557,13 +1573,15 @@ export default function HierarchyExplorer() {
                             <Plus size={14} />
                           </button>
                         )}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleDeleteNode(node); }} 
-                          className="p-1 transition-colors hover:text-red-500 cursor-pointer"
-                          style={{ color: mutedText }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {canDeleteNode && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteNode(node); }} 
+                            className="p-1 transition-colors hover:text-red-500 cursor-pointer"
+                            style={{ color: mutedText }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </foreignObject>
                   )}
@@ -1602,7 +1620,8 @@ export default function HierarchyExplorer() {
           </g>
         </svg>
 
-        {contextMenu && (
+        {/* {canModifyHierarchy && contextMenu && ( */}
+        {canRightClickCreate && contextMenu && (
           <div 
             className="absolute rounded-lg p-1.5 shadow-2xl z-50 w-44"
             style={{ 
