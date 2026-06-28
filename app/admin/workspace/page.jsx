@@ -154,7 +154,7 @@ export default function HierarchyExplorer() {
   const [activeTab, setActiveTab] = useState("user");
 
   const [apiError, setApiError] = useState(null);
-
+  const [selectedNodeMenuId, setSelectedNodeMenuId] = useState(null);
   const isPanning = useRef(false);
   const startPan = useRef({ x: 0, y: 0 });
   const svgRef = useRef(null);
@@ -825,6 +825,7 @@ export default function HierarchyExplorer() {
   const handleCanvasMouseDown = (e) => {
     if (e.button !== undefined && e.button === 2) return; 
     isPanning.current = true;
+    setSelectedNodeMenuId(null);
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
     startPan.current = {
@@ -988,12 +989,19 @@ export default function HierarchyExplorer() {
   };
 
   const handleCreateNodeInline = (parent) => {
+    // const childTypeMap = {
+    //   group: 'dept',
+    //   dept: 'sec',
+    //   sec: 'team',
+    //   team: 'cat-usr',
+    //   category: 'sub'
+    // };
     const childTypeMap = {
       group: 'dept',
-      dept: 'sec',
-      sec: 'team',
+      dept: 'section',       
+      section: 'team',       
       team: 'cat-usr',
-      category: 'sub'
+      category: 'subcategory'
     };
     const cType = childTypeMap[parent.type];
     if (cType === 'cat-usr') {
@@ -1001,16 +1009,25 @@ export default function HierarchyExplorer() {
       setModalType('assign-team');
       return;
     }
-
+    const siblings = nodes.filter(n => n.parentId === parent.id);
+    let newX = parent.x;
+    if (siblings.length > 0) {
+      const maxSiblingX = Math.max(...siblings.map(s => s.x));
+      newX = maxSiblingX + 220; 
+    } else {
+      newX = parent.x; 
+    }
     const tempId = `temp-${Date.now()}`;
     const levelYGap = 160;
     const childNode = {
       id: tempId,
       label: "",
-      type: cType === 'dept' ? 'dept' : cType === 'sec' ? 'section' : cType === 'team' ? 'team' : 'subcategory',
+      // type: cType === 'dept' ? 'dept' : cType === 'sec' ? 'section' : cType === 'team' ? 'team' : 'subcategory',
+      type: cType,
       rawId: 0,
       parentId: parent.id,
-      x: parent.x,
+      // x: parent.x,
+      x: newX,
       y: parent.y + levelYGap,
       countText: "Drafting...",
       isExpanded: false,
@@ -1454,8 +1471,12 @@ export default function HierarchyExplorer() {
                   onDoubleClick={() => handleDoubleClick(node)}
                   onMouseDown={(e) => handleNodeMouseDown(e, node)}
                   onTouchStart={(e) => handleNodeMouseDown(e, node)}
-                  onMouseEnter={() => setHoveredNodeId(node.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
+                  // onMouseEnter={() => setHoveredNodeId(node.id)}
+                  // onMouseLeave={() => setHoveredNodeId(null)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedNodeMenuId(prev => prev === node.id ? null : node.id);
+                  }}
                   // style={{ transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   style={{ transition: draggedNodeId ? 'none' : 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)' }}
                 >
@@ -1545,7 +1566,8 @@ export default function HierarchyExplorer() {
                     </>
                   )}
 
-                  {canViewHoverActions && hoveredNodeId === node.id && !isEditing && !node.isNew && (
+                  {/* {canViewHoverActions && hoveredNodeId === node.id && !isEditing && !node.isNew && ( */}
+                  {canViewHoverActions && selectedNodeMenuId === node.id && !isEditing && !node.isNew && (
                     <foreignObject x={-60} y={-65} width={120} height={40}>
                       <div 
                         className="flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 border shadow-xl mx-auto w-fit"
