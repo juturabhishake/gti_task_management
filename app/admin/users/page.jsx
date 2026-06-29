@@ -821,6 +821,7 @@ export default function UserHierarchyPage() {
               {[100, 200, 500, 1000].map(val => (
                 <option key={val} value={val}>{val}</option>
               ))}
+              <option value={999999}>All</option> 
             </select>
           </div>
           <div className="flex items-center gap-2">
