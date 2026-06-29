@@ -133,7 +133,8 @@ export default function HierarchyExplorer() {
   const [searchIndex, setSearchIndex] = useState(-1);
   const [nodeToCenter, setNodeToCenter] = useState(null);
 
-  const [panOffset, setPanOffset] = useState({ x: typeof window !== 'undefined' && window.innerWidth > 768 ? window.innerWidth / 2.5 : typeof window !== 'undefined' ? window.innerWidth / 2 : 200, y: 150 });
+  // const [panOffset, setPanOffset] = useState({ x: typeof window !== 'undefined' && window.innerWidth > 768 ? window.innerWidth / 2.5 : typeof window !== 'undefined' ? window.innerWidth / 2 : 200, y: 150 });
+  const [panOffset, setPanOffset] = useState({ x: 200, y: 150 });
   const [zoomScale, setZoomScale] = useState(0.85);
   const [draggedNodeId, setDraggedNodeId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -163,8 +164,26 @@ export default function HierarchyExplorer() {
   const searchInputRef = useRef(null);
   const touchStartDist = useRef(null);
   const longPressTimer = useRef(null);
+  const [groupsPerRow, setGroupsPerRow] = useState(5);
   const nodesRef = useRef([]);
-
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const initialX = window.innerWidth > 768 ? window.innerWidth / 2.5 : window.innerWidth / 2;
+      setPanOffset({ x: initialX, y: 150 });
+    }
+    if (typeof window !== 'undefined') {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 640) setGroupsPerRow(1); 
+      else if (width < 1024) setGroupsPerRow(3);
+      else setGroupsPerRow(5);                  
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }
+  }, []);
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
 
   useEffect(() => {
@@ -411,16 +430,16 @@ export default function HierarchyExplorer() {
 
     const layoutNodes = [];
     const layoutLinks = [];
-    const rootXGap = 450;
-    const levelYGap = 160;
-    const nodeSpacingX = 220;
-
+    // const rootXGap = 450;
     let groupsToRender = [...groups];
     if (selectedGroupId) {
       groupsToRender = groups.filter(g => g.Id === selectedGroupId);
     } else if (highlightedPath && highlightedPath.groupId) {
       groupsToRender = groups.filter(g => g.Id === highlightedPath.groupId);
     }
+    const rootXGap = groupsToRender.length > 5 ? 210 : 240; 
+    const levelYGap = 160;
+    const nodeSpacingX = 200;
 
     groupsToRender.forEach((group, gIdx) => {
       const gId = `group-${group.Id}`;
@@ -620,7 +639,7 @@ export default function HierarchyExplorer() {
       return [...new Set(desc)];
     };
 
-    const spacing = 220;
+    const spacing = 200;
     const draftLayoutNodes = layoutNodes.filter(n => n.isNew);
 
     draftLayoutNodes.forEach(draft => {
@@ -673,7 +692,7 @@ export default function HierarchyExplorer() {
 
     setNodes(layoutNodes);
     setLinks(layoutLinks);
-  }, [treeData, expandedNodes, highlightedPath, selectedGroupId, draftNodes]);
+  }, [treeData, expandedNodes, highlightedPath, selectedGroupId, draftNodes, groupsPerRow]);
   const getHierarchyPathParts = (option, allOptions) => {
     const pathNames = [];
     let current = allOptions.find(o => o.Id === option.Id);

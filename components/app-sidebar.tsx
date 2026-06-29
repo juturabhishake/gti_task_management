@@ -113,6 +113,11 @@ const data = {
           url: "/admin/hierarchy",
           icon: IconDatabase,
         },
+        {
+          title: "Users",
+          url: "/admin/users",
+          icon: IconUsers,
+        },
       ]
     },
     //   title: "Equipment Breakdown and Repair Form",
