@@ -76,9 +76,16 @@ function ComboboxPopover({ data = [], fullOptions = [], selectedValue, onSelect,
   const [search, setSearch] = useState('');
   
   const selectedItem = data.find(item => (item.Id ?? item.id) === selectedValue);
+//   const filtered = data.filter(item => {
+//     const name = item.Name || item.name || '';
+//     return name.toLowerCase().includes(search.toLowerCase());
+//   });
   const filtered = data.filter(item => {
     const name = item.Name || item.name || '';
-    return name.toLowerCase().includes(search.toLowerCase());
+    if (name.toLowerCase().includes(search.toLowerCase())) return true;
+  
+    const parts = getHierarchyPathParts(item, fullOptions);
+    return parts.some(part => part.toLowerCase().includes(search.toLowerCase()));
   });
 
   const triggerParts = selectedItem ? getHierarchyPathParts(selectedItem, fullOptions) : [];
@@ -774,15 +781,15 @@ export default function UserHierarchyPage() {
                       <td hidden={!canModifyHierarchy} className="p-3 whitespace-nowrap flex items-center gap-2">
                         <button 
                           onClick={() => handleOpenEditModal(row)}
-                          className="p-1 hover:bg-primary/10 rounded text-muted-foreground hover:text-blue-500 cursor-pointer"
+                          className="p-1 hover:bg-primary/10 rounded text-blue-500 hover:text-blue-400 cursor-pointer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => handleDelete(row)}
-                          className="p-1 hover:bg-primary/10 rounded text-muted-foreground hover:text-red-500 cursor-pointer"
+                          className="p-1 hover:bg-primary/10 rounded text-red-500 hover:text-red-400 cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-red" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                       <td className="p-3 font-semibold text-foreground whitespace-nowrap">{row.EmployeeId}</td>
