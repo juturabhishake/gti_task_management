@@ -674,6 +674,18 @@ export default function HierarchyExplorer() {
     setNodes(layoutNodes);
     setLinks(layoutLinks);
   }, [treeData, expandedNodes, highlightedPath, selectedGroupId, draftNodes]);
+  const getHierarchyPathText = (option, allOptions) => {
+    const pathNames = [];
+    let current = allOptions.find(o => o.Id === option.Id);
+    const visited = new Set();
+    
+    while (current && !visited.has(current.Id)) {
+      visited.add(current.Id);
+      pathNames.push(current.Name);
+      current = allOptions.find(o => o.Id === current.ParentId);
+    }
+    return pathNames.reverse().join(" ➔ ");
+  };
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -685,17 +697,27 @@ export default function HierarchyExplorer() {
 
     const filtered = [];
     options.forEach(o => {
-      if (o.Name?.toLowerCase().includes(val.toLowerCase())) {
-        let details = '';
-        if (o.Type === 'Group') details = 'Root Group';
-        else if (o.Type === 'Department') details = 'Department Level';
-        else if (o.Type === 'Section') details = 'Section Level';
-        else if (o.Type === 'Team') details = 'Team Level';
-        else if (o.Type === 'Category') details = 'Category Configuration Unit';
-        else if (o.Type === 'Subcategory') details = 'Subcategory Unit';
-        else if (o.Type === 'User') details = 'Team Assigned Member';
+      // if (o.Name?.toLowerCase().includes(val.toLowerCase())) {
+      //   let details = '';
+      //   if (o.Type === 'Group') details = 'Root Group';
+      //   else if (o.Type === 'Department') details = 'Department Level';
+      //   else if (o.Type === 'Section') details = 'Section Level';
+      //   else if (o.Type === 'Team') details = 'Team Level';
+      //   else if (o.Type === 'Category') details = 'Category Configuration Unit';
+      //   else if (o.Type === 'Subcategory') details = 'Subcategory Unit';
+      //   else if (o.Type === 'User') details = 'Team Assigned Member';
         
-        filtered.push({ type: o.Type, name: o.Name, details, path: tracePath(o.Id, options) });
+      //   filtered.push({ type: o.Type, name: o.Name, details, path: tracePath(o.Id, options) });
+      // }
+      if (o.Name?.toLowerCase().includes(val.toLowerCase())) {
+        const pathText = getHierarchyPathText(o, options);
+
+        filtered.push({ 
+          type: o.Type, 
+          name: o.Name, 
+          pathText: pathText, 
+          path: tracePath(o.Id, options) 
+        });
       }
     });
 
@@ -1342,6 +1364,11 @@ export default function HierarchyExplorer() {
                       <span className="font-bold text-[10px] truncate max-w-[150px]" style={{ color: index === searchIndex ? mainText : theme === 'dark' ? '#e2e8f0' : '#334155' }}>{res.name}</span>
                       <span className="text-[8px] px-1 py-0.5 rounded font-black uppercase" style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary, #6366f1)' }}>{res.type}</span>
                     </div>
+                    {res.pathText && (
+                      <span className="text-[8px] mt-1 truncate max-w-full opacity-75 block text-left" style={{ color: mutedText }}>
+                        {res.pathText}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
