@@ -118,6 +118,11 @@ const data = {
           url: "/admin/users",
           icon: IconUsers,
         },
+        {
+          title: "Categories",
+          url: "/admin/categories",
+          icon: IconListDetails,
+        },
       ]
     },
     //   title: "Equipment Breakdown and Repair Form",
