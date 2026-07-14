@@ -210,7 +210,7 @@ export default function SubcategoryTaskView() {
     <div className="@container/main min-h-screen bg-background text-foreground flex p-1 flex-col space-y-4 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-primary/10 pb-4 shrink-0">
         <div className="px-1">
-          <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-foreground text-primary">
+          <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-foreground">
             Task Grid
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
