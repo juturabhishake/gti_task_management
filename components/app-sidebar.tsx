@@ -125,6 +125,23 @@ const data = {
         },
       ]
     },
+    {
+      title: "Tasks",
+      url: "#",
+      icon: IconFolder,
+      items: [
+        {
+          title: "All Tasks",
+          url: "/tasks/all",
+          icon: IconDatabase,
+        },
+        {
+          title: "My Tasks",
+          url: "/tasks/my_tasks",
+          icon: IconDatabase,
+        },
+      ]
+    },
     //   title: "Equipment Breakdown and Repair Form",
     //   url: "#",
     //   icon: IconTicket,
