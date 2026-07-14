@@ -99,6 +99,23 @@ const data = {
     //   icon: IconHierarchy2,
     // },
     {
+      title: "Tasks",
+      url: "#",
+      icon: IconFolder,
+      items: [
+        {
+          title: "All Tasks",
+          url: "/tasks/all",
+          icon: IconDatabase,
+        },
+        {
+          title: "My Tasks",
+          url: "/tasks/my_tasks",
+          icon: IconDatabase,
+        },
+      ]
+    },
+    {
       title: "Administration",
       url: "#",
       icon: IconSettings,
@@ -122,23 +139,6 @@ const data = {
           title: "Categories",
           url: "/admin/categories",
           icon: IconListDetails,
-        },
-      ]
-    },
-    {
-      title: "Tasks",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        {
-          title: "All Tasks",
-          url: "/tasks/all",
-          icon: IconDatabase,
-        },
-        {
-          title: "My Tasks",
-          url: "/tasks/my_tasks",
-          icon: IconDatabase,
         },
       ]
     },

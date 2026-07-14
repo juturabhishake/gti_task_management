@@ -39,7 +39,8 @@ export default function Home() {
           setStatus("success");
 
           setTimeout(() => {
-              window.location.href = "/admin/workspace";
+              // window.location.href = "/admin/workspace";
+              window.location.href = "/tasks/all";
           }, 3000);
       }
       else {
