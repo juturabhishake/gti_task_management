@@ -45,19 +45,24 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: 'Internal Execution Failure', error: error.message });
     }
   } else if (req.method === "GET") {
-    const { action, page = 1, size = 100, search = '', subcategoryId, teamId, employeeId } = req.query;
+    // const { action, page = 1, size = 100, search = '', subcategoryId, teamId, employeeId } = req.query;
+    const { type, action, page = 1, size = 100, search = '', subcategoryId, teamId, employeeId, startDate, endDate } = req.query;
     try {
       if (action === 'list') {
         const parsedPage = parseInt(page) || 1;
         const parsedSize = parseInt(size) || 100;
         const escapedSearch = search.replace(/'/g, "''");
         const escapedEmployeeId = (req.query.employeeId || '').replace(/'/g, "''");
+        const escapedStartDate = startDate ? `'${startDate.replace(/'/g, "''")}'` : 'NULL';
+        const escapedEndDate = endDate ? `'${endDate.replace(/'/g, "''")}'` : 'NULL';
         const results = await prisma.$queryRawUnsafe(
           `EXEC dbo.SP_Get_Task_Assignments_Paged 
             @PageNumber = ${parsedPage}, 
             @PageSize = ${parsedSize}, 
             @SearchTerm = N'${escapedSearch}',
-            @EmployeeId = '${escapedEmployeeId}'`
+            @EmployeeId = '${escapedEmployeeId}',
+            @StartDate = ${escapedStartDate},
+            @EndDate = ${escapedEndDate}`
         );
         return res.status(200).json({ data: results });
       } else if (action === 'single') {

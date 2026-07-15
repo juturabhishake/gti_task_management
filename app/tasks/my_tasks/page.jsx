@@ -2,15 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Filter, 
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare
+  Search, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Filter, Loader2,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare, Calendar as CalendarIcon
 } from 'lucide-react';
-import * as Popover from '@radix-ui/react-popover';
 import EditForm from './editform';
+import SecureLS from 'secure-ls';
+import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useAccessCheck } from '@/lib/useAccessCheck';
 import { useAdminAccessCheck } from "@/lib/checkAdmin";
-import SecureLS from 'secure-ls';
-const PAGE_ID_FOR_THIS_FORM = 2039;
+
+const PAGE_ID_FOR_THIS_FORM = 2038;
+
 function FilterPopover({ options = [], selected = [], onChange, onClear }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -19,56 +25,55 @@ function FilterPopover({ options = [], selected = [], onChange, onClear }) {
   );
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <button className="p-1 hover:bg-primary/10 rounded transition text-muted-foreground hover:text-foreground cursor-pointer">
           <Filter className={`w-3.5 h-3.5 ${selected.length > 0 ? 'text-primary fill-primary/20' : ''}`} />
         </button>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content className="z-50 w-56 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
-          <input 
-            type="text" 
-            placeholder="Search filters..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full text-xs bg-background border border-primary/20 rounded-lg p-1.5 mb-2 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
-          />
-          <div className="max-h-36 overflow-y-auto space-y-1">
-            {filtered.length === 0 ? (
-              <p className="text-xs text-center text-muted-foreground py-1">No items found</p>
-            ) : (
-              filtered.map((opt, idx) => {
-                const isChecked = selected.includes(opt);
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => onChange(opt)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs hover:bg-primary/5 rounded cursor-pointer text-left text-foreground"
-                  >
-                    <CheckSquare className={`w-3.5 h-3.5 shrink-0 ${isChecked ? 'text-primary fill-primary/10' : 'text-muted-foreground/40'}`} />
-                    <span className="truncate">{String(opt ?? '')}</span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-          <div className="border-t border-primary/10 pt-2 mt-2 flex justify-between">
-            <button 
-              onClick={() => {
-                onClear();
-                setOpen(false);
-              }}
-              className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              Clear Filters
-            </button>
-          </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+      </PopoverTrigger>
+      <PopoverContent className="z-50 w-56 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+        <input 
+          type="text" 
+          placeholder="Search filters..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full text-xs bg-background border border-primary/20 rounded-lg p-1.5 mb-2 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+        />
+        <div className="max-h-36 overflow-y-auto space-y-1">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-center text-muted-foreground py-1">No items found</p>
+          ) : (
+            filtered.map((opt, idx) => {
+              const isChecked = selected.includes(opt);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => onChange(opt)}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs hover:bg-primary/5 rounded cursor-pointer text-left text-foreground"
+                >
+                  <CheckSquare className={`w-3.5 h-3.5 shrink-0 ${isChecked ? 'text-primary fill-primary/10' : 'text-muted-foreground/40'}`} />
+                  <span className="truncate">{String(opt ?? '')}</span>
+                </button>
+              );
+            })
+          )}
+        </div>
+        <div className="border-t border-primary/10 pt-2 mt-2 flex justify-between">
+          <button 
+            onClick={() => {
+              onClear();
+              setOpen(false);
+            }}
+            className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
+
 export default function SubcategoryTaskView() {
   const { isLoading: isAccessLoading } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const { hasAccess: isAdmin, isLoading: isAdminLoading } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
@@ -76,10 +81,11 @@ export default function SubcategoryTaskView() {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(null);
   const [view, setView] = useState('list');
+  const [tableLoading, setTableLoading] = useState(false);
 
   const [pagination, setPagination] = useState({ page: 1, size: 100 });
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [employeeId, setEmployeeId] = useState('');
   const [columnFilters, setColumnFilters] = useState({
     SubcategoryName: [],
     DisplayHours: [],
@@ -91,31 +97,66 @@ export default function SubcategoryTaskView() {
     StatusName: [],
     AssignedUsername: []
   });
-
   const [sorting, setSorting] = useState({ column: null, direction: 'none' });
 
+  const getFirstDayOfMonth = () => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
+  };
+
+  const getLastDayOfMonth = () => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
+  };
+
+  const [dateRange, setDateRange] = useState({
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+  });
+
+  const [numberOfMonths, setNumberOfMonths] = useState(2);
+
   useEffect(() => {
-    if (view === 'list') {
-      fetchData();
-    }
-  }, [pagination.page, pagination.size, searchTerm, view]);
-  const getSecureLSValue = (key) => {
     if (typeof window !== 'undefined') {
       try {
         const ls = new SecureLS({ encodingType: "aes" });
-        return ls.get(key) || '';
+        const val = ls.get('employee_id');
+        setEmployeeId(val || '');
       } catch (e) {
-        return '';
+        console.error(e);
       }
     }
-    return '';
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setNumberOfMonths(window.innerWidth < 768 ? 1 : 2);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const formatLocalDate = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
+
+  useEffect(() => {
+    if (view === 'list' && dateRange?.from && dateRange?.to) {
+      fetchData();
+    }
+  }, [pagination.page, pagination.size, searchTerm, view, employeeId, dateRange]);
+
   const fetchData = async () => {
     try {
-      const employeeId = getSecureLSValue('employee_id');
-      // console.log('Fetching data with employeeId:', employeeId);
-      // alert('Fetching data with employeeId: ' + employeeId);
-      const res = await fetch(`/api/tasks/task-assignments?action=list&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&employeeId=${employeeId}`);
+      setTableLoading(true);
+      const start = formatLocalDate(dateRange.from);
+      const end = formatLocalDate(dateRange.to);
+      const res = await fetch(`/api/tasks/task-assignments?action=list&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&employeeId=${employeeId || ''}&startDate=${start}&endDate=${end}`);
       const json = await res.json();
       if (res.ok && json.data) {
         setDataList(json.data);
@@ -123,6 +164,8 @@ export default function SubcategoryTaskView() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setTableLoading(false);
     }
   };
 
@@ -232,21 +275,62 @@ export default function SubcategoryTaskView() {
       </div>
 
       <div className="bg-card border border-primary/20 rounded-xl overflow-hidden flex flex-col h-[calc(100vh-160px)] w-full">
-        <div className="p-4 bg-primary/5 border-b border-primary/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="p-4 bg-primary/5 border-b border-primary/10 flex flex-wrap justify-between items-start sm:items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 font-semibold">
             <h4 className="font-bold text-foreground text-sm">Tasks Assigned</h4>
             <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 rounded-full">{totalCount} Total</span>
           </div>
-          <div className="relative w-full sm:w-64">
-            <input 
-              type="text" 
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full text-xs bg-background border border-primary/20 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
-            />
-            <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-muted-foreground" />
+          <div className="flex flex-wrap sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <div className={cn("grid gap-2 w-full sm:w-auto")}>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant={"outline"}
+                    className={cn(
+                      "w-full sm:w-[300px] justify-start text-left font-semibold text-xs border-primary/20 bg-background hover:bg-primary/5",
+                      !dateRange && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "LLL dd, yyyy")} -{" "}
+                          {format(dateRange.to, "LLL dd, yyyy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "LLL dd, yyyy")
+                      )
+                    ) : (
+                      <span>Pick a date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={numberOfMonths}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <input 
+                type="text" 
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full text-xs bg-background border border-primary/20 rounded-lg pl-8 pr-2.5 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+              />
+              <Search className="absolute left-2.5 top-3 w-3.5 h-3.5 text-muted-foreground" />
+            </div>
           </div>
+          
         </div>
 
         <div className="flex-1 overflow-x-auto overflow-y-auto">
@@ -384,7 +468,16 @@ export default function SubcategoryTaskView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary/10">
-                {applyFilters(dataList).length === 0 ? (
+                {tableLoading ? (
+                  <tr>
+                    <td colSpan={10} className="p-8 text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        <span className="text-xs text-muted-foreground">Loading task data...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : applyFilters(dataList).length === 0 ? (
                   <tr>
                     <td colSpan={10} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records found</td>
                   </tr>
