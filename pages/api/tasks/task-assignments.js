@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     }
   } else if (req.method === "GET") {
     // const { action, page = 1, size = 100, search = '', subcategoryId, teamId, employeeId } = req.query;
-    const { type, action, page = 1, size = 100, search = '', subcategoryId, teamId, employeeId, startDate, endDate } = req.query;
+    const { action, page = 1, size = 100, search = '', subcategoryId, teamId, employeeId, startDate, endDate } = req.query;
     try {
       if (action === 'list') {
         const parsedPage = parseInt(page) || 1;
