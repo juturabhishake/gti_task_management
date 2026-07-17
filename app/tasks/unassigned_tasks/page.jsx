@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { useAccessCheck } from '@/lib/useAccessCheck';
 import { useAdminAccessCheck } from "@/lib/checkAdmin";
 
-const PAGE_ID_FOR_THIS_FORM = 2038;
+const PAGE_ID_FOR_THIS_FORM = 2041;
 
 function FilterPopover({ options = [], selected = [], onChange, onClear }) {
   const [open, setOpen] = useState(false);
@@ -159,7 +159,7 @@ export default function SubcategoryTaskView() {
       setTableLoading(true);
       const start = formatLocalDate(dateRange.from);
       const end = formatLocalDate(dateRange.to);
-      const res = await fetch(`/api/tasks/task-assignments?action=list&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&employeeId=${employeeId || ''}&startDate=${start}&endDate=${end}`);
+      const res = await fetch(`/api/tasks/task-assignments?action=list&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&startDate=${start}&endDate=${end}&isUnassignedView=1`);
       const json = await res.json();
       if (res.ok && json.data) {
         setDataList(json.data);

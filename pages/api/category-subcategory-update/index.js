@@ -14,20 +14,38 @@ export default async function handler(req, res) {
   await runMiddleware(req, res, cors);
 
   if (req.method === "POST") {
-    const { type, targetId, name, parentId, hours } = req.body;
+    // const { type, targetId, name, parentId, hours } = req.body;
+    const { type, targetId, name, parentId, hours, project, maxHours, mediumHours, minHours } = req.body;
     try {
       const targetIdVal = parseInt(targetId) || 0;
       const parentIdVal = parseInt(parentId) || 0;
       const hoursVal = parseFloat(hours) || 0;
+      // const escapedName = (name || '').replace(/'/g, "''");
+      const maxHoursVal = parseFloat(maxHours) || 0;
+      const mediumHoursVal = parseFloat(mediumHours) || 0;
+      const minHoursVal = parseFloat(minHours) || 0;
       const escapedName = (name || '').replace(/'/g, "''");
+      const escapedProject = (project || '').replace(/'/g, "''");
 
+      // const rawResult = await prisma.$queryRawUnsafe(
+      //   `EXEC dbo.SP_Update_Category_Subcategory 
+      //     @Type = '${type}', 
+      //     @TargetId = ${targetIdVal}, 
+      //     @Name = N'${escapedName}', 
+      //     @ParentId = ${parentIdVal}, 
+      //     @Hours = ${hoursVal}`
+      // );
       const rawResult = await prisma.$queryRawUnsafe(
         `EXEC dbo.SP_Update_Category_Subcategory 
           @Type = '${type}', 
           @TargetId = ${targetIdVal}, 
           @Name = N'${escapedName}', 
           @ParentId = ${parentIdVal}, 
-          @Hours = ${hoursVal}`
+          @Hours = ${hoursVal},
+          @Project = N'${escapedProject}',
+          @MaxHours = ${maxHoursVal},
+          @MediumHours = ${mediumHoursVal},
+          @MinHours = ${minHoursVal}`
       );
 
       const resultStatus = rawResult?.[0]?.Status;

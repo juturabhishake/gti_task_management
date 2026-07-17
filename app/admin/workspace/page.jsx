@@ -153,7 +153,7 @@ export default function HierarchyExplorer() {
   const [userForm, setUserForm] = useState({ userId: "", shiftId: "", designation: "" });
   const [categoryForm, setCategoryForm] = useState({ name: "" });
   const [activeTab, setActiveTab] = useState("user");
-
+  const [formState, setFormState] = useState({ name: "", project: "", maxHours: "", mediumHours: "", minHours: "" });
   const [apiError, setApiError] = useState(null);
   const [selectedNodeMenuId, setSelectedNodeMenuId] = useState(null);
   const isPanning = useRef(false);
@@ -379,8 +379,19 @@ export default function HierarchyExplorer() {
       if (row.CategoryId && !uniqueCategories.some(c => c.Id === row.CategoryId)) {
         uniqueCategories.push({ Id: row.CategoryId, Name: row.CategoryName, TeamId: row.TeamId });
       }
+      // if (row.SubcategoryId && !uniqueSubcategories.some(sc => sc.Id === row.SubcategoryId)) {
+      //   uniqueSubcategories.push({ Id: row.SubcategoryId, Name: row.SubcategoryName, StandardHours: row.StandardHours, CategoryId: row.CategoryId });
+      // }
       if (row.SubcategoryId && !uniqueSubcategories.some(sc => sc.Id === row.SubcategoryId)) {
-        uniqueSubcategories.push({ Id: row.SubcategoryId, Name: row.SubcategoryName, StandardHours: row.StandardHours, CategoryId: row.CategoryId });
+        uniqueSubcategories.push({ 
+          Id: row.SubcategoryId, 
+          Name: row.SubcategoryName, 
+          StandardHours: row.StandardHours, 
+          CategoryId: row.CategoryId,
+          MinHours: row.MinHours,
+          MediumHours: row.MediumHours,
+          MaxHours: row.MaxHours
+        });
       }
       if (row.MapId && !uniqueUsers.some(u => u.Id === row.MapId)) {
         uniqueUsers.push({
@@ -579,7 +590,8 @@ export default function HierarchyExplorer() {
                             parentId: cId,
                             x: scx,
                             y: scy,
-                            countText: `${sub.StandardHours} Hrs`,
+                            // countText: `${sub.StandardHours} Hrs`,
+                            countText: `Min = ${sub.MinHours || 0} | Med = ${sub.MediumHours || 0} | Max = ${sub.MaxHours || 0}`,
                             isExpanded: false
                           });
 
@@ -1045,10 +1057,22 @@ export default function HierarchyExplorer() {
       team: 'cat-usr',
       category: 'subcategory'
     };
+    // const cType = childTypeMap[parent.type];
+    // if (cType === 'cat-usr') {
+    //   setActiveModalNode(parent);
+    //   setModalType('assign-team');
+    //   return;
+    // }
     const cType = childTypeMap[parent.type];
     if (cType === 'cat-usr') {
       setActiveModalNode(parent);
       setModalType('assign-team');
+      return;
+    }
+    if (cType === 'subcategory') {
+      setActiveModalNode(parent);
+      setFormState({ name: '', project: '', maxHours: '', mediumHours: '', minHours: '' });
+      setModalType('create-subcategory');
       return;
     }
     const siblings = nodes.filter(n => n.parentId === parent.id);
@@ -1121,11 +1145,28 @@ export default function HierarchyExplorer() {
     }
   };
 
+  // const handleEditInit = (node) => {
+  //   if (node.type === 'user') {
+  //     setActiveModalNode(node);
+  //     const usrObj = userCatalog.find(u => String(u.id) === String(node.rawId)) || {};
+  //     // setUserForm({ userId: String(node.rawId), shiftId: String(usrObj.shiftId || ""), designation: usrObj.designation || "" });
+  //     const row = treeData.find(r => String(r.MapId) === String(node.rawId));
+  //     const u = userCatalog.find(u => String(u.id) === String(row?.UserId)) || {};
+  //     const shiftId = String(row?.ShiftName ? (shiftCatalog.find(s => s.name === row.ShiftName)?.id || "") : (usrObj.shiftId || ""));
+  //     setUserForm({ userId: String(row?.UserId || ""), shiftId: shiftId, designation: row?.Designation || u.designation || "" });
+  //     setModalType('update-user');
+  //     return;
+  //   }
+  //   setInlineEditingNodeId(node.id);
+  //   setInlineEditValue(node.label);
+  //   if (node.type === 'subcategory') {
+  //     setInlineHoursValue(node.countText?.replace(" Hrs", "") || "");
+  //   }
+  // };
   const handleEditInit = (node) => {
     if (node.type === 'user') {
       setActiveModalNode(node);
       const usrObj = userCatalog.find(u => String(u.id) === String(node.rawId)) || {};
-      // setUserForm({ userId: String(node.rawId), shiftId: String(usrObj.shiftId || ""), designation: usrObj.designation || "" });
       const row = treeData.find(r => String(r.MapId) === String(node.rawId));
       const u = userCatalog.find(u => String(u.id) === String(row?.UserId)) || {};
       const shiftId = String(row?.ShiftName ? (shiftCatalog.find(s => s.name === row.ShiftName)?.id || "") : (usrObj.shiftId || ""));
@@ -1133,11 +1174,21 @@ export default function HierarchyExplorer() {
       setModalType('update-user');
       return;
     }
+    if (node.type === 'subcategory') {
+      setActiveModalNode(node);
+      const row = treeData.find(r => String(r.SubcategoryId) === String(node.rawId));
+      setFormState({
+        name: node.label,
+        project: row?.Project || '',
+        maxHours: row?.MaxHours || '',
+        mediumHours: row?.MediumHours || '',
+        minHours: row?.MinHours || ''
+      });
+      setModalType('update-subcategory');
+      return;
+    }
     setInlineEditingNodeId(node.id);
     setInlineEditValue(node.label);
-    if (node.type === 'subcategory') {
-      setInlineHoursValue(node.countText?.replace(" Hrs", "") || "");
-    }
   };
 
   const handleUpdateInlineSave = async (node) => {
@@ -1273,7 +1324,33 @@ export default function HierarchyExplorer() {
       setTimeout(() => setSubmitState('idle'), 3000);
     }
   };
+  const handleSubcategorySubmit = async (e) => {
+    e.preventDefault();
+    setSubmitState('loading');
+    const payload = {
+      command: modalType === 'create-subcategory' ? "CREATE" : "UPDATE",
+      type: "Subcategory",
+      targetId: modalType === 'update-subcategory' ? parseInt(activeModalNode.rawId) : undefined,
+      parentId: modalType === 'create-subcategory' ? parseInt(activeModalNode.rawId) : undefined,
+      name: formState.name,
+      project: formState.project,
+      maxHours: parseFloat(formState.maxHours) || 0,
+      mediumHours: parseFloat(formState.mediumHours) || 0,
+      minHours: parseFloat(formState.minHours) || 0
+    };
 
+    const res = await triggerPostAction(payload);
+    if (res.success) {
+      setSubmitState('success');
+      setTimeout(() => {
+        setSubmitState('idle');
+        setModalType(null);
+      }, 1500);
+    } else {
+      setSubmitState('error');
+      setTimeout(() => setSubmitState('idle'), 3000);
+    }
+  };
   const resetView = () => {
     setZoomScale(0.85);
     setExpandedNodes({});
@@ -1828,35 +1905,42 @@ export default function HierarchyExplorer() {
         </div>
       )}
 
-      {modalType === 'update-user' && activeModalNode && (
-        <div className="absolute inset-0 z-[9999] flex items-center justify-center p-4" >
-          <div className="rounded-xl p-5 w-full max-w-sm shadow-2xl relative bg-card border border-primary/50" >
-            <button 
-              onClick={() => setModalType(null)}
-              className="absolute top-4 right-4 p-1 rounded-lg"
-              style={{ color: 'var(--primary, #6366f1)' }}
-            >
+      {(modalType === 'create-subcategory' || modalType === 'update-subcategory') && activeModalNode && (
+        <div className="absolute inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="rounded-xl p-5 w-full max-w-sm shadow-2xl relative bg-card border border-primary/50">
+            <button onClick={() => setModalType(null)} className="absolute top-4 right-4 p-1 transition" style={{ color: 'var(--primary, #6366f1)' }}>
               <X className="w-4 h-4" />
             </button>
-            
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2" style={{ color: mainText }}>
-              <Pencil className="w-4 h-4" style={{ color: 'var(--primary, #6366f1)' }} />
-              <span>Update User: {activeModalNode.label}</span>
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2" style={{ color: mainText }}>
+              <span>{modalType === 'create-subcategory' ? 'Create Subcategory' : 'Update Subcategory'}</span>
             </h3>
-
-            <form onSubmit={handleUpdateUserSubmit} className="space-y-4">
+            <form onSubmit={handleSubcategorySubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--primary, #6366f1)' }}>Assigned Shift</label>
-                <CustomCombobox 
-                  options={shiftComboboxOptions} 
-                  value={userForm.shiftId} 
-                  onChange={(val) => setUserForm(prev => ({ ...prev, shiftId: val }))} 
-                  placeholder="-- Select Shift --" 
-                  theme={theme} 
-                />
+                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Subcategory Name</label>
+                <input type="text" required value={formState.name} onChange={e => setFormState(p => ({ ...p, name: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
               </div>
-
-              <SubmitButton state={submitState} defaultText="Commit Update" />
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Project Name</label>
+                <input type="text" required value={formState.project} onChange={e => setFormState(p => ({ ...p, project: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
+              </div>
+              <div className="pt-2 border-t border-primary/10">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary block mb-1">Severity :</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Max (hrs)</label>
+                    <input type="number" step="any" required value={formState.maxHours} onChange={e => setFormState(p => ({ ...p, maxHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Medium (hrs)</label>
+                    <input type="number" step="any" required value={formState.mediumHours} onChange={e => setFormState(p => ({ ...p, mediumHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Min (hrs)</label>
+                    <input type="number" step="any" required value={formState.minHours} onChange={e => setFormState(p => ({ ...p, minHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
+                  </div>
+                </div>
+              </div>
+              <SubmitButton state={submitState} defaultText="Save" />
             </form>
           </div>
         </div>

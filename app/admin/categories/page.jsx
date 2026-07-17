@@ -299,11 +299,21 @@ export default function CategoriesSubcategoriesPage() {
   const [feedback, setFeedback] = useState(null);
   const [submitState, setSubmitState] = useState('idle');
 
+  // const [formState, setFormState] = useState({
+  //   name: '',
+  //   teamId: '',
+  //   categoryId: '',
+  //   hours: ''
+  // });
   const [formState, setFormState] = useState({
     name: '',
     teamId: '',
     categoryId: '',
-    hours: ''
+    hours: '',
+    project: '',
+    maxHours: '',
+    mediumHours: '',
+    minHours: ''
   });
 
   const [pagination, setPagination] = useState({ page: 1, size: 100 });
@@ -382,7 +392,8 @@ export default function CategoriesSubcategoriesPage() {
 
   const handleOpenAddModal = () => {
     setFeedback(null);
-    setFormState({ name: '', teamId: '', categoryId: '', hours: '' });
+    // setFormState({ name: '', teamId: '', categoryId: '', hours: '' });
+    setFormState({ name: '', teamId: '', categoryId: '', hours: '', project: '', maxHours: '', mediumHours: '', minHours: '' });
     setIsEditing(false);
     setIsModalOpen(true);
   };
@@ -392,17 +403,33 @@ export default function CategoriesSubcategoriesPage() {
     setActiveId(row.Id);
     if (activeTab === 'categories') {
       setFormState({
+        // name: row.CategoryName,
+        // teamId: row.TeamId,
+        // categoryId: '',
+        // hours: ''
         name: row.CategoryName,
         teamId: row.TeamId,
         categoryId: '',
-        hours: ''
+        hours: '',
+        project: '',
+        maxHours: '',
+        mediumHours: '',
+        minHours: ''
       });
     } else {
       setFormState({
+        // name: row.SubcategoryName,
+        // teamId: row.TeamId,
+        // categoryId: row.CategoryId,
+        // hours: String(row.StandardHours)
         name: row.SubcategoryName,
         teamId: row.TeamId,
         categoryId: row.CategoryId,
-        hours: String(row.StandardHours)
+        hours: String(row.StandardHours),
+        project: row.Project || '',
+        maxHours: String(row.MaxHours || row.StandardHours || ''),
+        mediumHours: String(row.MediumHours || ''),
+        minHours: String(row.MinHours || '')
       });
     }
     setIsEditing(true);
@@ -439,7 +466,11 @@ export default function CategoriesSubcategoriesPage() {
       setFeedback({ type: 'error', text: 'All fields are required' });
       return;
     }
-    if (activeTab === 'subcategories' && (!formState.name || !formState.categoryId || !formState.hours)) {
+    // if (activeTab === 'subcategories' && (!formState.name || !formState.categoryId || !formState.hours)) {
+    //   setFeedback({ type: 'error', text: 'All fields are required' });
+    //   return;
+    // }
+    if (activeTab === 'subcategories' && (!formState.name || !formState.categoryId || !formState.project || !formState.maxHours || !formState.mediumHours || !formState.minHours)) {
       setFeedback({ type: 'error', text: 'All fields are required' });
       return;
     }
@@ -449,30 +480,62 @@ export default function CategoriesSubcategoriesPage() {
 
     let res;
     try {
-      if (isEditing) {
-        res = await fetch('/api/category-subcategory-update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: activeTab === 'categories' ? 'Category' : 'Subcategory',
-            targetId: activeId,
-            name: formState.name,
-            parentId: activeTab === 'categories' ? parseInt(formState.teamId) : parseInt(formState.categoryId),
-            hours: activeTab === 'subcategories' ? parseFloat(formState.hours) : 0
-          })
-        });
+      if (activeTab === 'categories') {
+        if (isEditing) {
+          res = await fetch('/api/category-subcategory-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'Category',
+              targetId: activeId,
+              name: formState.name,
+              parentId: parseInt(formState.teamId)
+            })
+          });
+        } else {
+          res = await fetch('/api/user-hierarchy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              command: 'CREATE',
+              type: 'Category',
+              name: formState.name,
+              parentId: parseInt(formState.teamId)
+            })
+          });
+        }
       } else {
-        res = await fetch('/api/user-hierarchy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            command: 'CREATE',
-            type: activeTab === 'categories' ? 'Category' : 'Subcategory',
-            name: formState.name,
-            parentId: activeTab === 'categories' ? parseInt(formState.teamId) : parseInt(formState.categoryId),
-            hours: activeTab === 'subcategories' ? parseFloat(formState.hours) : 0
-          })
-        });
+        if (isEditing) {
+          res = await fetch('/api/category-subcategory-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'Subcategory',
+              targetId: activeId,
+              name: formState.name,
+              parentId: parseInt(formState.categoryId),
+              project: formState.project,
+              maxHours: parseFloat(formState.maxHours) || 0,
+              mediumHours: parseFloat(formState.mediumHours) || 0,
+              minHours: parseFloat(formState.minHours) || 0
+            })
+          });
+        } else {
+          res = await fetch('/api/user-hierarchy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              command: 'CREATE',
+              type: 'Subcategory',
+              name: formState.name,
+              parentId: parseInt(formState.categoryId),
+              project: formState.project,
+              maxHours: parseFloat(formState.maxHours) || 0,
+              mediumHours: parseFloat(formState.mediumHours) || 0,
+              minHours: parseFloat(formState.minHours) || 0
+            })
+          });
+        }
       }
 
       const result = await res.json();
@@ -1020,15 +1083,53 @@ export default function CategoriesSubcategoriesPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Standard Hours</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Project Name</label>
                     <input
-                      type="number"
-                      step="any"
+                      type="text"
                       required
-                      value={formState.hours}
-                      onChange={e => setFormState(prev => ({ ...prev, hours: e.target.value }))}
+                      value={formState.project}
+                      onChange={e => setFormState(prev => ({ ...prev, project: e.target.value }))}
                       className="w-full text-xs rounded p-2 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold"
                     />
+                  </div>
+
+                  <div className="pt-2 border-t border-primary/10">
+                    <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary block mb-1">Severity :</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Min</label>
+                        <input
+                          type="number"
+                          step="any"
+                          required
+                          value={formState.minHours}
+                          onChange={e => setFormState(prev => ({ ...prev, minHours: e.target.value }))}
+                          className="w-full text-xs rounded p-2 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Medium</label>
+                        <input
+                          type="number"
+                          step="any"
+                          required
+                          value={formState.mediumHours}
+                          onChange={e => setFormState(prev => ({ ...prev, mediumHours: e.target.value }))}
+                          className="w-full text-xs rounded p-2 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Max</label>
+                        <input
+                          type="number"
+                          step="any"
+                          required
+                          value={formState.maxHours}
+                          onChange={e => setFormState(prev => ({ ...prev, maxHours: e.target.value }))}
+                          className="w-full text-xs rounded p-2 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </>
               )}

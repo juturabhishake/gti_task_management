@@ -14,7 +14,8 @@ export default async function handler(req, res) {
     await runMiddleware(req, res, cors);
 
     if (req.method === "POST") {
-        const { command, type, targetId, parentId, name, hours, userId, shiftId, groupId, deptId, sectionId, teamId } = req.body;
+        // const { command, type, targetId, parentId, name, hours, userId, shiftId, groupId, deptId, sectionId, teamId } = req.body;
+        const { command, type, targetId, parentId, name, hours, userId, shiftId, groupId, deptId, sectionId, teamId, project, maxHours, mediumHours, minHours } = req.body;
         
         let xmlBuilder = `<ActionRequest>`;
         xmlBuilder += `<Command>${command || ''}</Command>`;
@@ -29,6 +30,10 @@ export default async function handler(req, res) {
         xmlBuilder += `<DeptId>${deptId || 0}</DeptId>`;
         xmlBuilder += `<SectionId>${sectionId || 0}</SectionId>`;
         xmlBuilder += `<TeamId>${teamId || 0}</TeamId>`;
+        xmlBuilder += `<Project>${(project || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Project>`;
+        xmlBuilder += `<MaxHours>${maxHours || 0}</MaxHours>`;
+        xmlBuilder += `<MediumHours>${mediumHours || 0}</MediumHours>`;
+        xmlBuilder += `<MinHours>${minHours || 0}</MinHours>`;
         xmlBuilder += `</ActionRequest>`;
 
         try {

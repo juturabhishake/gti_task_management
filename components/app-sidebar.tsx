@@ -104,13 +104,23 @@ const data = {
       icon: IconFolder,
       items: [
         {
-          title: "All Tasks",
-          url: "/tasks/all",
+          title: "Create",
+          url: "/tasks/create",
+          icon: IconListDetails,
+        },
+        {
+          title: "Unassigned Tasks",
+          url: "/tasks/unassigned_tasks",
           icon: IconDatabase,
         },
         {
           title: "My Tasks",
           url: "/tasks/my_tasks",
+          icon: IconDatabase,
+        },
+        {
+          title: "All Tasks",
+          url: "/tasks/all",
           icon: IconDatabase,
         },
       ]

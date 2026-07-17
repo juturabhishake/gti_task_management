@@ -14,20 +14,38 @@ export default async function handler(req, res) {
   await runMiddleware(req, res, cors);
 
   if (req.method === "POST") {
-    const { subcategoryId, assignedUserId, actualHours, statusId, reason } = req.body;
+    // const { subcategoryId, assignedUserId, actualHours, statusId, reason } = req.body;
+    const { subcategoryId, assignedUserId, actualHours, statusId, reason, taskDetails, workDate, dueDate, severity, targetStandardHours } = req.body;
     try {
       const parsedSubcategoryId = parseInt(subcategoryId) || 0;
       const parsedAssignedUserId = parseInt(assignedUserId) || 0;
       const parsedActualHours = parseFloat(actualHours) || 0;
       const parsedStatusId = parseInt(statusId) || 0;
+      const parsedTargetStandardHours = parseFloat(targetStandardHours) || 0;
       const escapedReason = (reason || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const escapedDetails = (taskDetails || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const escapedSeverity = (severity || '').replace(/'/g, "''");
+      const escapedWorkDate = workDate ? workDate : '';
+      const escapedDueDate = dueDate ? dueDate : '';
 
+      // let xmlBuilder = `<TaskAssignment>`;
+      // xmlBuilder += `<SubcategoryId>${parsedSubcategoryId}</SubcategoryId>`;
+      // xmlBuilder += `<AssignedUserId>${parsedAssignedUserId}</AssignedUserId>`;
+      // xmlBuilder += `<ActualHours>${parsedActualHours}</ActualHours>`;
+      // xmlBuilder += `<StatusId>${parsedStatusId}</StatusId>`;
+      // xmlBuilder += `<Reason>${escapedReason}</Reason>`;
+      // xmlBuilder += `</TaskAssignment>`;
       let xmlBuilder = `<TaskAssignment>`;
       xmlBuilder += `<SubcategoryId>${parsedSubcategoryId}</SubcategoryId>`;
       xmlBuilder += `<AssignedUserId>${parsedAssignedUserId}</AssignedUserId>`;
       xmlBuilder += `<ActualHours>${parsedActualHours}</ActualHours>`;
       xmlBuilder += `<StatusId>${parsedStatusId}</StatusId>`;
       xmlBuilder += `<Reason>${escapedReason}</Reason>`;
+      xmlBuilder += `<TaskDetails>${escapedDetails}</TaskDetails>`;
+      xmlBuilder += `<WorkDate>${escapedWorkDate}</WorkDate>`;
+      xmlBuilder += `<DueDate>${escapedDueDate}</DueDate>`;
+      xmlBuilder += `<Severity>${escapedSeverity}</Severity>`;
+      xmlBuilder += `<TargetStandardHours>${parsedTargetStandardHours}</TargetStandardHours>`;
       xmlBuilder += `</TaskAssignment>`;
 
       const escapedXml = xmlBuilder.replace(/'/g, "''");
@@ -55,6 +73,7 @@ export default async function handler(req, res) {
         const escapedEmployeeId = (req.query.employeeId || '').replace(/'/g, "''");
         const escapedStartDate = startDate ? `'${startDate.replace(/'/g, "''")}'` : 'NULL';
         const escapedEndDate = endDate ? `'${endDate.replace(/'/g, "''")}'` : 'NULL';
+        const isUnassignedViewVal = parseInt(req.query.isUnassignedView) || 0;
         const results = await prisma.$queryRawUnsafe(
           `EXEC dbo.SP_Get_Task_Assignments_Paged 
             @PageNumber = ${parsedPage}, 
@@ -62,7 +81,8 @@ export default async function handler(req, res) {
             @SearchTerm = N'${escapedSearch}',
             @EmployeeId = '${escapedEmployeeId}',
             @StartDate = ${escapedStartDate},
-            @EndDate = ${escapedEndDate}`
+            @EndDate = ${escapedEndDate},
+            @IsUnassignedView = ${isUnassignedViewVal}`
         );
         return res.status(200).json({ data: results });
       } else if (action === 'single') {

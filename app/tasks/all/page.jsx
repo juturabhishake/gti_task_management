@@ -95,7 +95,10 @@ export default function SubcategoryTaskView() {
     DeptName: [],
     GroupName: [],
     StatusName: [],
-    AssignedUsername: []
+    AssignedUsername: [],
+    Severity: [],
+    WorkDate: [],
+    DueDate: []
   });
   const [sorting, setSorting] = useState({ column: null, direction: 'none' });
 
@@ -355,6 +358,20 @@ export default function SubcategoryTaskView() {
                   </th>
                   <th className="p-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
+                      <div className="flex items-center cursor-pointer select-none" onClick={() => handleSortCycle('Severity')}>
+                        <span>Severity</span>
+                        <SortIcon column="Severity" />
+                      </div>
+                      <FilterPopover 
+                        options={getUniqueValues('Severity')} 
+                        selected={columnFilters.Severity} 
+                        onChange={val => toggleFilterValue('Severity', val)} 
+                        onClear={() => clearColumnFilter('Severity')}
+                      />
+                    </div>
+                  </th>
+                  <th className="p-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
                       <div className="flex items-center cursor-pointer select-none" onClick={() => handleSortCycle('DisplayHours')}>
                         <span>Standard Hours</span>
                         <SortIcon column="DisplayHours" />
@@ -365,6 +382,22 @@ export default function SubcategoryTaskView() {
                         onChange={val => toggleFilterValue('DisplayHours', val)} 
                         onClear={() => clearColumnFilter('DisplayHours')}
                       />
+                    </div>
+                  </th>
+                  <th className="p-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center cursor-pointer select-none" onClick={() => handleSortCycle('WorkDate')}>
+                        <span>Work Date</span>
+                        <SortIcon column="WorkDate" />
+                      </div>
+                    </div>
+                  </th>
+                  <th className="p-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center cursor-pointer select-none" onClick={() => handleSortCycle('DueDate')}>
+                        <span>Due Date</span>
+                        <SortIcon column="DueDate" />
+                      </div>
                     </div>
                   </th>
                   <th className="p-3 whitespace-nowrap">
@@ -493,7 +526,12 @@ export default function SubcategoryTaskView() {
                         </button>
                       </td>
                       <td className="p-3 font-semibold text-foreground whitespace-nowrap">{row.SubcategoryName}</td>
+                      <td className="p-3 whitespace-nowrap">
+                        <span className="bg-primary/10 text-primary font-bold px-2 py-0.5 rounded text-[10px]">{row.Severity || 'Unassigned'}</span>
+                      </td>
                       <td className="p-3 whitespace-nowrap font-bold text-primary">{row.DisplayHours} Hours</td>
+                      <td className="p-3 whitespace-nowrap">{row.WorkDate ? row.WorkDate.split('T')[0] : 'No Date'}</td>
+                      <td className="p-3 whitespace-nowrap">{row.DueDate ? row.DueDate.split('T')[0] : 'No Date'}</td>
                       <td className="p-3 whitespace-nowrap font-medium text-foreground">{row.CategoryName}</td>
                       <td className="p-3 whitespace-nowrap font-medium text-foreground">{row.TeamName}</td>
                       <td className="p-3 whitespace-nowrap">{row.SectionName}</td>
