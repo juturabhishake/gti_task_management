@@ -591,7 +591,7 @@ export default function HierarchyExplorer() {
                             x: scx,
                             y: scy,
                             // countText: `${sub.StandardHours} Hrs`,
-                            countText: `Min = ${sub.MinHours || 0} | Med = ${sub.MediumHours || 0} | Max = ${sub.MaxHours || 0}`,
+                            countText: `Low = ${sub.MinHours || 0} | Med = ${sub.MediumHours || 0} | High = ${sub.MaxHours || 0}`,
                             isExpanded: false
                           });
 
@@ -1927,16 +1927,16 @@ export default function HierarchyExplorer() {
                 <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary block mb-1">Severity :</label>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
-                    <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Max (hrs)</label>
-                    <input type="number" step="any" required value={formState.maxHours} onChange={e => setFormState(p => ({ ...p, maxHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
+                    <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Low (hrs)</label>
+                    <input type="number" step="any" required value={formState.minHours} onChange={e => setFormState(p => ({ ...p, minHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Medium (hrs)</label>
                     <input type="number" step="any" required value={formState.mediumHours} onChange={e => setFormState(p => ({ ...p, mediumHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Min (hrs)</label>
-                    <input type="number" step="any" required value={formState.minHours} onChange={e => setFormState(p => ({ ...p, minHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
+                    <label className="text-[8px] font-bold uppercase tracking-wider text-primary">High (hrs)</label>
+                    <input type="number" step="any" required value={formState.maxHours} onChange={e => setFormState(p => ({ ...p, maxHours: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
                   </div>
                 </div>
               </div>

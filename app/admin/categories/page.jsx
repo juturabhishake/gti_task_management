@@ -1097,7 +1097,7 @@ export default function CategoriesSubcategoriesPage() {
                     <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary block mb-1">Severity :</label>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
-                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Min</label>
+                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Low (Hrs.)</label>
                         <input
                           type="number"
                           step="any"
@@ -1108,7 +1108,7 @@ export default function CategoriesSubcategoriesPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Medium</label>
+                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Medium (Hrs.)</label>
                         <input
                           type="number"
                           step="any"
@@ -1119,7 +1119,7 @@ export default function CategoriesSubcategoriesPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Max</label>
+                        <label className="text-[8px] font-bold uppercase tracking-wider text-primary">High (Hrs.)</label>
                         <input
                           type="number"
                           step="any"

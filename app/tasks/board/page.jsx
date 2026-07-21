@@ -693,9 +693,9 @@ export default function SubcategoryTaskView() {
 
   const uniqueAssignees = getUniqueTaskAssignees();
   const severityOptions = [
-    { id: 'Min', name: `Min (${taskDetail?.MinHours || 0} Hours)` },
+    { id: 'Min', name: `Low (${taskDetail?.MinHours || 0} Hours)` },
     { id: 'Medium', name: `Medium (${taskDetail?.MediumHours || 0} Hours)` },
-    { id: 'Max', name: `Max (${taskDetail?.MaxHours || 0} Hours)` }
+    { id: 'Max', name: `High (${taskDetail?.MaxHours || 0} Hours)` }
   ];
 
   return (
@@ -1056,7 +1056,7 @@ export default function SubcategoryTaskView() {
                       
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Min Hours</label>
+                          <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Low (Hrs.)</label>
                           <input
                             type="number"
                             step="any"
@@ -1069,7 +1069,7 @@ export default function SubcategoryTaskView() {
                         </div>
                         
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Medium Hours</label>
+                          <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Medium (Hrs.)</label>
                           <input
                             type="number"
                             step="any"
@@ -1082,7 +1082,7 @@ export default function SubcategoryTaskView() {
                         </div>
                         
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Max Hours</label>
+                          <label className="text-[9px] font-bold uppercase tracking-wider text-primary">High (Hrs.)</label>
                           <input
                             type="number"
                             step="any"
