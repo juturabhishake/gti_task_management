@@ -862,7 +862,7 @@ export default function SubcategoryTaskView() {
         </div>
       ) : (
         <div className="flex-1 w-full overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max h-[calc(100vh-270px)] items-stretch">
+          <div className="flex gap-2 h-[calc(100vh-270px)] items-stretch w-full md:min-w-0">
             {statuses.map(col => {
               const columnTasks = dataList.filter(t => {
                 const matchesStatus = t.StatusId === col.id || (!t.StatusId && col.name === 'To Do');
@@ -882,7 +882,8 @@ export default function SubcategoryTaskView() {
                   key={col.id} 
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, col.id)}
-                  className="w-80 flex flex-col bg-card/40 border border-primary/10 rounded-2xl overflow-hidden shrink-0 animate-in fade-in duration-300"
+                  // className="w-80 flex flex-col bg-card/40 border border-primary/10 rounded-2xl overflow-hidden shrink-0 animate-in fade-in duration-300"
+                  className="w-[85vw] sm:w-80 md:flex-1 md:min-w-[250px] flex flex-col bg-card/40 border border-primary/10 rounded-2xl overflow-hidden shrink-0 md:shrink animate-in fade-in duration-300"
                 >
                   <div className="p-3.5 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
                     <span className="text-xs font-black uppercase tracking-wider text-foreground">{col.name}</span>

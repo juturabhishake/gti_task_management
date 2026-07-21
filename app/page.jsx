@@ -40,7 +40,7 @@ export default function Home() {
 
           setTimeout(() => {
               // window.location.href = "/admin/workspace";
-              window.location.href = "/tasks/all";
+              window.location.href = "/tasks/board";
           }, 3000);
       }
       else {
