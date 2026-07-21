@@ -1214,7 +1214,8 @@ export default function SubcategoryTaskView() {
                       </div>
                     </div>
 
-                    {taskDetail?.AssignedUserId && (
+                    {/* {taskDetail?.AssignedUserId && ( */}
+                    {!!taskDetail?.AssignedUserId && (
                       <div className="space-y-4 border-t border-primary/10 pt-4">
                         <h4 className="text-xs font-extrabold uppercase tracking-wider text-primary border-b border-primary/5 pb-2 mb-2">Section 2: Work Update & Status</h4>
                         
