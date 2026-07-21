@@ -19,6 +19,7 @@ import {
   IconSettings,
   IconUsers,
   IconChevronRight,
+  IconColumns,
   IconSitemap,
   IconTree,
   IconHierarchy2,
@@ -58,6 +59,11 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: IconDashboard,
+    },
+    {
+      title: "Task Board",
+      url: "/tasks/board",
+      icon: IconListDetails,
     },
     {
       title: "Initial Release Staging",
