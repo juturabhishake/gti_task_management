@@ -283,7 +283,7 @@ export default function SubcategoryTaskView() {
   const [isAssignedUser, setIsAssignedUser] = useState(false);
   const [taskDetail, setTaskDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-
+  
   const [selectedAssignees, setSelectedAssignees] = useState([]);
 
   const [formState, setFormState] = useState({
@@ -310,7 +310,7 @@ export default function SubcategoryTaskView() {
   });
 
   const [numberOfMonths, setNumberOfMonths] = useState(2);
-
+  const scrollContainerRef = React.useRef(null);
   useEffect(() => {
     const empId = getSecureLSValue('employee_id');
     setEmployeeId(empId || '');
@@ -405,14 +405,18 @@ export default function SubcategoryTaskView() {
       const jsonStatus = await resStatus.json();
       
       let fetchedStatuses = [];
+      // if (resStatus.ok && jsonStatus.data) {
+      //   const preferredOrder = ['to do', 'pending', 'in progress', 'waiting for response', 'on hold', 'blocked', 'resolved', 'done'];
+      //   fetchedStatuses = [...jsonStatus.data].sort((a, b) => {
+      //     const idxA = preferredOrder.indexOf(a.name.toLowerCase());
+      //     const idxB = preferredOrder.indexOf(b.name.toLowerCase());
+      //     return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      //   });
+      //   setStatuses(fetchedStatuses);
+      // }
       if (resStatus.ok && jsonStatus.data) {
-        const preferredOrder = ['to do', 'pending', 'in progress', 'waiting for response', 'on hold', 'blocked', 'resolved', 'done'];
-        fetchedStatuses = [...jsonStatus.data].sort((a, b) => {
-          const idxA = preferredOrder.indexOf(a.name.toLowerCase());
-          const idxB = preferredOrder.indexOf(b.name.toLowerCase());
-          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-        });
-        setStatuses(fetchedStatuses);
+        const sortedStatuses = [...jsonStatus.data].sort((a, b) => a.id - b.id);
+        setStatuses(sortedStatuses);
       }
 
       if (dateRange?.from && dateRange?.to) {
@@ -697,7 +701,23 @@ export default function SubcategoryTaskView() {
     { id: 'Medium', name: `Medium (${taskDetail?.MediumHours || 0} Hours)` },
     { id: 'Max', name: `High (${taskDetail?.MaxHours || 0} Hours)` }
   ];
+  const handleBoardDragOver = (e) => {
+    e.preventDefault();
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
+    const rect = container.getBoundingClientRect();
+    const clientX = e.clientX;
+
+    const edgeThreshold = 80;
+    const scrollSpeed = 15;
+
+    if (clientX < rect.left + edgeThreshold) {
+      container.scrollLeft -= scrollSpeed;
+    } else if (clientX > rect.right - edgeThreshold) {
+      container.scrollLeft += scrollSpeed;
+    }
+  };
   return (
     <div className="@container/main min-h-screen bg-background text-foreground flex p-1 flex-col space-y-4 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-primary/10 pb-4 shrink-0">
@@ -803,7 +823,7 @@ export default function SubcategoryTaskView() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <div className={cn("grid gap-2 w-full sm:w-auto")}>
             <Popover>
               <PopoverTrigger asChild>
@@ -842,7 +862,7 @@ export default function SubcategoryTaskView() {
               </PopoverContent>
             </Popover>
           </div>
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-75">
             <input 
               type="text" 
               placeholder="Search tasks..."
@@ -861,7 +881,12 @@ export default function SubcategoryTaskView() {
           <p className="text-xs text-muted-foreground">Loading agile board...</p>
         </div>
       ) : (
-        <div className="flex-1 w-full overflow-x-auto pb-4">
+        // <div className="flex-1 w-full overflow-x-auto pb-4">
+        <div 
+          ref={scrollContainerRef} 
+          onDragOver={handleBoardDragOver} 
+          className="flex-1 w-full overflow-x-auto pb-4"
+        >
           <div className="flex gap-2 h-[calc(100vh-270px)] items-stretch w-full md:min-w-0">
             {statuses.map(col => {
               const columnTasks = dataList.filter(t => {
