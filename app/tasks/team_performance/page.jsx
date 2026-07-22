@@ -13,7 +13,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
+import { useAccessCheck } from '@/lib/useAccessCheck';
+import { useAdminAccessCheck } from "@/lib/checkAdmin";
+const PAGE_ID_FOR_THIS_FORM = 2044;
 const getSecureLSValue = (key) => {
   if (typeof window !== 'undefined') {
     try {
@@ -349,6 +351,8 @@ function PopoverDropdown({ data = [], selectedValue, onSelect, placeholder }) {
 }
 
 export default function TeamPerformance() {
+  const { isLoading: isAccessLoading } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
+  const { hasAccess: isAdmin, isLoading: isAdminLoading } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const [employeeId, setEmployeeId] = useState('');
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
