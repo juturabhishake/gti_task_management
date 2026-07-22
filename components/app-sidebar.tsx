@@ -134,6 +134,11 @@ const data = {
           url: "/tasks/my_performance",
           icon: IconDashboard,
         },
+        {
+          title: "Team Performance",
+          url: "/tasks/team_performance",
+          icon: IconDashboard,
+        },
       ]
     },
     {

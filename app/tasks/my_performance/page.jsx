@@ -251,7 +251,7 @@ export default function MyPerformance() {
         </Button>
       </div>
 
-      <div className="p-4 sm:p-5 bg-card border border-border/80 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+      <div className="p-4 sm:p-5 bg-card border border-border/80 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
           <div className="flex flex-col gap-1.5 w-full sm:w-auto">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -284,7 +284,7 @@ export default function MyPerformance() {
                   </span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[9999] rounded-2xl border-border shadow-2xl overflow-hidden" align="start">
+              <PopoverContent className="w-auto p-0 z-[9999] rounded-xl border-border shadow-2xl overflow-hidden" align="start">
                 <Calendar
                   initialFocus
                   mode="range"
@@ -320,7 +320,7 @@ export default function MyPerformance() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[450px] bg-card border border-border/60 rounded-2xl shadow-sm space-y-4">
+        <div className="flex flex-col items-center justify-center min-h-[450px] bg-card border border-border/60 rounded-xl shadow-sm space-y-4">
           <div className="relative flex items-center justify-center">
             <div className="w-12 h-12 rounded-full border-4 border-primary/20 animate-pulse" />
             <Loader2 className="w-8 h-8 animate-spin text-primary absolute" />
@@ -330,7 +330,7 @@ export default function MyPerformance() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-            <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-blue-500/30 group">
+            <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-blue-500/30 group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
               <div className="flex justify-between items-start z-10">
                 <div>
@@ -348,7 +348,7 @@ export default function MyPerformance() {
               </div>
             </div>
 
-            <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-emerald-500/30 group">
+            <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-emerald-500/30 group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
               <div className="flex justify-between items-start z-10">
                 <div>
@@ -366,7 +366,7 @@ export default function MyPerformance() {
               </div>
             </div>
 
-            <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-amber-500/30 group">
+            <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-amber-500/30 group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
               <div className="flex justify-between items-start z-10">
                 <div>
@@ -384,7 +384,7 @@ export default function MyPerformance() {
               </div>
             </div>
 
-            <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-indigo-500/30 group">
+            <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-indigo-500/30 group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
               <div className="flex justify-between items-start z-10">
                 <div>
@@ -402,7 +402,7 @@ export default function MyPerformance() {
               </div>
             </div>
 
-            <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-purple-500/30 group">
+            <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[120px] transition-all duration-300 hover:shadow-md hover:border-purple-500/30 group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
               <div className="flex justify-between items-start z-10">
                 <div>
@@ -422,7 +422,7 @@ export default function MyPerformance() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 items-stretch">
-            <div className="lg:col-span-2 bg-card border border-border/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between min-h-[440px]">
+            <div className="lg:col-span-2 bg-card border border-border/80 rounded-xl p-6 shadow-sm flex flex-col justify-between min-h-[440px]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
                 <div>
                   <h4 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -578,7 +578,7 @@ export default function MyPerformance() {
               </div>
             </div>
 
-            <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-card border border-border/80 rounded-xl p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="border-b border-border/60 pb-4">
                   <h4 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -630,7 +630,7 @@ export default function MyPerformance() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-center bg-muted/20 border border-border/40 rounded-2xl p-4">
+                <div className="flex items-center justify-center bg-muted/20 border border-border/40 rounded-xl p-4">
                   <div className="relative w-32 h-32 flex items-center justify-center">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle 
