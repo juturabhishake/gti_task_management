@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Filter, Loader2,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare,
-  Calendar as CalendarIcon, Minimize2, Maximize2, X, Clock, AlertCircle, Check, Folder, Layers, ArrowRight, Pencil, Plus, ChevronDown
+  Calendar as CalendarIcon, Minimize2, Maximize2, X, Clock, AlertCircle, Check, Folder, Layers, ArrowRight, Pencil, Plus, ChevronDown, Activity
 } from 'lucide-react';
 import * as RadixPopover from '@radix-ui/react-popover';
 import SecureLS from 'secure-ls';
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useAccessCheck } from '@/lib/useAccessCheck';
 import { useAdminAccessCheck } from "@/lib/checkAdmin";
 
-const PAGE_ID_FOR_THIS_FORM = 2038;
+const PAGE_ID_FOR_THIS_FORM = 2042;
 
 const getSecureLSValue = (key) => {
   if (typeof window !== 'undefined') {
@@ -260,7 +260,120 @@ function PopoverDropdown({ data = [], selectedValue, onSelect, placeholder, disa
     </RadixPopover.Root>
   );
 }
+const getHierarchyPathParts = (item, allOptions) => {
+  const pathNames = [];
+  const itemId = item.Id ?? item.id;
+  const itemType = item.Type ?? item.type;
+  
+  let current = allOptions.find(o => 
+    (o.Id ?? o.id) === itemId && 
+    (o.Type ?? o.type).toLowerCase() === itemType.toLowerCase()
+  );
+  
+  const visited = new Set();
+  
+  while (current) {
+    const uniqueKey = `${current.Type ?? current.type}-${current.Id ?? current.id}`;
+    if (visited.has(uniqueKey)) break;
+    visited.add(uniqueKey);
+    
+    pathNames.push(current.Name ?? current.name);
+    
+    const parentId = current.ParentId ?? current.parentId;
+    if (!parentId) break;
+    
+    const currentType = (current.Type ?? current.type).toLowerCase();
+    let parentType = "";
+    if (currentType === "team") parentType = "section";
+    else if (currentType === "section") parentType = "department";
+    else if (currentType === "department") parentType = "group";
+    
+    current = allOptions.find(o => 
+      (o.Id ?? o.id) === parentId && 
+      (o.Type ?? o.type).toLowerCase() === parentType
+    );
+  }
+  
+  return pathNames.reverse();
+};
+function MultiSelectUserPopover({ data = [], fullOptions = [], selectedValues = [], onSelect, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const filtered = data.filter(item => {
+    const main = item.name || '';
+    return main.toLowerCase().includes(search.toLowerCase());
+  });
 
+  return (
+    <RadixPopover.Root open={open} onOpenChange={(val) => { setOpen(val); if (!val) setSearch(''); }}>
+      <RadixPopover.Trigger asChild>
+        <button className="w-full sm:w-75 flex items-center justify-between text-xs bg-background border border-primary/20 rounded-lg p-2 text-foreground focus:ring-2 focus:ring-primary focus:outline-none min-h-9 cursor-pointer text-left font-semibold">
+          <span className="truncate">
+            {selectedValues.length === 0 
+              ? placeholder 
+              : `${selectedValues.length} Selected`}
+          </span>
+          <ChevronDown className="w-4 h-4 ml-2 shrink-0 opacity-60 text-primary" />
+        </button>
+      </RadixPopover.Trigger>
+      <RadixPopover.Portal>
+        <RadixPopover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+          <input 
+            type="text" 
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full text-xs bg-background border border-primary/20 rounded-lg p-1.5 mb-2 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+          />
+          <div className="max-h-40 overflow-y-auto space-y-1">
+            <button
+              type="button"
+              onClick={() => onSelect([])}
+              className="w-full text-left rounded-md px-2.5 py-1.5 text-xs text-primary font-bold hover:bg-primary/5 cursor-pointer"
+            >
+              Clear All Selection
+            </button>
+            {filtered.map((item, idx) => {
+              const isSelected = selectedValues.includes(String(item.id));
+              const itemForPath = { Id: Number(item.id), Type: 'Team' };
+              const pathParts = getHierarchyPathParts(itemForPath, fullOptions);
+
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    const next = isSelected 
+                      ? selectedValues.filter(v => v !== String(item.id))
+                      : [...selectedValues, String(item.id)];
+                    onSelect(next);
+                  }}
+                  className={`w-full text-left rounded-md px-2.5 py-1.5 flex items-center justify-between transition text-xs cursor-pointer ${isSelected ? 'bg-primary/20 text-foreground font-semibold' : 'hover:bg-primary/5 text-muted-foreground hover:text-foreground'}`}
+                >
+                  <div className="flex flex-col text-left py-0.5 max-w-[85%]">
+                    <span className="font-bold text-xs truncate">{item.name}</span>
+                    {pathParts.length > 1 && (
+                      <div className="text-[9px] text-muted-foreground mt-0.5 whitespace-normal opacity-85 leading-tight">
+                        {pathParts.slice(0, -1).map((part, pIdx) => (
+                          <span key={pIdx} className="inline-block whitespace-nowrap">
+                            {pIdx > 0 && " ➔ "}
+                            {part}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {isSelected && <CheckSquare className="w-3.5 h-3.5 text-primary shrink-0 ml-1" />}
+                </button>
+              );
+            })}
+          </div>
+        </RadixPopover.Content>
+      </RadixPopover.Portal>
+    </RadixPopover.Root>
+  );
+}
 export default function SubcategoryTaskView() {
   const { isLoading: isAccessLoading } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const { hasAccess: isAdmin, isLoading: isAdminLoading } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
@@ -283,9 +396,13 @@ export default function SubcategoryTaskView() {
   const [isAssignedUser, setIsAssignedUser] = useState(false);
   const [taskDetail, setTaskDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  
+  const [hierarchyOptions, setHierarchyOptions] = useState([]);
   const [selectedAssignees, setSelectedAssignees] = useState([]);
-
+  const [selectedTeamsList, setSelectedTeamsList] = useState([]);
+  const [previousUserIds, setPreviousUserIds] = useState([]);
+  const [prevStatusId, setPrevStatusId] = useState(null);
+  const [hasSetDefaultUser, setHasSetDefaultUser] = useState(false);
+  const [teamsList, setTeamsList] = useState([]);
   const [formState, setFormState] = useState({
     name: '',
     project: '',
@@ -301,7 +418,8 @@ export default function SubcategoryTaskView() {
     workDate: '',
     dueDate: '',
     severity: '',
-    targetStandardHours: ''
+    targetStandardHours: '',
+    progressPct: 0
   });
 
   const [dateRange, setDateRange] = useState({
@@ -315,8 +433,29 @@ export default function SubcategoryTaskView() {
     const empId = getSecureLSValue('employee_id');
     setEmployeeId(empId || '');
     fetchCategoryCatalog();
+    fetchHierarchyOptions();
   }, []);
-
+  const fetchHierarchyOptions = async () => {
+    try {
+      const res = await fetch('/api/user-hierarchy?action=options');
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setHierarchyOptions(json.data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  const handleTeamSelectionChange = (newTeams) => {
+    if (newTeams.length > 0 && selectedTeamsList.length === 0) {
+      setPreviousUserIds(selectedAssignees);
+      setSelectedAssignees([]);
+      
+    } else if (newTeams.length === 0 && selectedTeamsList.length > 0) {
+      setSelectedAssignees(previousUserIds);
+    }
+    setSelectedTeamsList(newTeams);
+  };
   useEffect(() => {
     const handleResize = () => {
       setNumberOfMonths(window.innerWidth < 768 ? 1 : 2);
@@ -325,13 +464,42 @@ export default function SubcategoryTaskView() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
+  useEffect(() => {
+   const fetchTeams = async () => {
+     const res = await fetch('/api/tasks/team-performance?action=teams');
+     const json = await res.json();
+     if (res.ok && json.data) setTeamsList(json.data);
+   };
+   fetchTeams();
+  }, []);
   useEffect(() => {
     if (employeeId) {
       fetchStatusesAndData();
     }
-  }, [employeeId, dateRange, searchTerm]);
-
+  }, [employeeId, dateRange, searchTerm, selectedTeamsList]);
+  // useEffect(() => {
+  //   // if (dataList.length > 0 && employeeId && selectedAssignees.length === 0) {
+  //   //   const currentUser = dataList.find(t => String(t.AssignedEmployeeId) === String(employeeId));
+  //   //   if (currentUser && currentUser.AssignedUserId) {
+  //   //     setSelectedAssignees([String(currentUser.AssignedUserId)]);
+  //   //   }
+  //   // }
+  //   if (dataList.length > 0 && employeeId && selectedAssignees.length === 0 && selectedTeamsList.length === 0) {
+  //     const currentUser = dataList.find(t => String(t.AssignedEmployeeId) === String(employeeId));
+  //     if (currentUser && currentUser.AssignedUserId) {
+  //       setSelectedAssignees([String(currentUser.AssignedUserId)]);
+  //     }
+  //   }
+  // }, [dataList, employeeId, selectedTeamsList]);
+  useEffect(() => {
+    if (dataList.length > 0 && employeeId && !hasSetDefaultUser && selectedTeamsList.length === 0) {
+      const currentUser = dataList.find(t => String(t.AssignedEmployeeId) === String(employeeId));
+      if (currentUser && currentUser.AssignedUserId) {
+        setSelectedAssignees([String(currentUser.AssignedUserId)]);
+        setHasSetDefaultUser(true);
+      }
+    }
+  }, [dataList, employeeId, selectedTeamsList, hasSetDefaultUser]);
   useEffect(() => {
     if (taskDetail) {
       const verifyAccess = async () => {
@@ -341,11 +509,11 @@ export default function SubcategoryTaskView() {
           return;
         }
 
-        if (taskDetail.StatusName === 'Resolved') {
-          setHasEditAccess(false);
-          setIsAssignedUser(false);
-          return;
-        }
+        // if (taskDetail.StatusName === 'Resolved') {
+        //   setHasEditAccess(false);
+        //   setIsAssignedUser(false);
+        //   return;
+        // }
 
         try {
           const employeeIdVal = getSecureLSValue('employee_id');
@@ -422,7 +590,8 @@ export default function SubcategoryTaskView() {
       if (dateRange?.from && dateRange?.to) {
         const start = formatLocalDate(dateRange.from);
         const end = formatLocalDate(dateRange.to);
-        const resData = await fetch(`/api/tasks/task-assignments?action=list&page=1&size=999999&search=${searchTerm}&startDate=${start}&endDate=${end}`);
+        const teamIdsString = selectedTeamsList.join(',');
+        const resData = await fetch(`/api/tasks/task-assignments?action=list&page=1&size=999999&search=${searchTerm}&startDate=${start}&endDate=${end}&teamIds=${teamIdsString}&loggedInEmployeeId=${employeeId || ''}`);
         const jsonData = await resData.json();
         if (resData.ok && jsonData.data) {
           setDataList(jsonData.data);
@@ -536,7 +705,8 @@ export default function SubcategoryTaskView() {
           workDate: detail.WorkDate ? detail.WorkDate.split('T')[0] : '',
           dueDate: detail.DueDate ? detail.DueDate.split('T')[0] : '',
           severity: detail.Severity || '',
-          targetStandardHours: detail.ExpectedHours !== null ? String(detail.ExpectedHours) : ''
+          targetStandardHours: detail.ExpectedHours !== null ? String(detail.ExpectedHours) : '',
+          progressPct: detail.ProgressPct || 0
         });
 
         const resUsers = await fetch(`/api/tasks/task-assignments?action=usersByTeam&teamId=${detail.TeamId}`);
@@ -551,7 +721,22 @@ export default function SubcategoryTaskView() {
       setLoadingDetail(false);
     }
   };
-
+  const handleProgressChange = (val) => {
+    const parsedVal = parseInt(val) || 0;
+    let updateState = { ...formState, progressPct: parsedVal };
+    const resolvedStatus = statuses.find(s => s.name === 'Resolved' || s.name === 'Done');
+    if (parsedVal === 100) {
+      if (resolvedStatus && formState.statusId !== resolvedStatus.id) {
+        setPrevStatusId(formState.statusId);
+        updateState.statusId = resolvedStatus.id;
+      }
+    } else {
+      if (resolvedStatus && formState.statusId === resolvedStatus.id && prevStatusId) {
+        updateState.statusId = prevStatusId;
+      }
+    }
+    setFormState(updateState);
+  };
   const handleSeverityChange = (val) => {
     let target = 0;
     if (val === 'Min') target = taskDetail?.MinHours || 0;
@@ -639,7 +824,8 @@ export default function SubcategoryTaskView() {
             workDate: formState.workDate,
             dueDate: formState.dueDate,
             severity: formState.severity,
-            targetStandardHours: formState.targetStandardHours ? parseFloat(formState.targetStandardHours) : null
+            targetStandardHours: formState.targetStandardHours ? parseFloat(formState.targetStandardHours) : null,
+            progressPct: parseInt(formState.progressPct)
           })
         });
       }
@@ -716,6 +902,42 @@ export default function SubcategoryTaskView() {
       container.scrollLeft -= scrollSpeed;
     } else if (clientX > rect.right - edgeThreshold) {
       container.scrollLeft += scrollSpeed;
+    }
+  };
+  const verifyAccess = async () => {
+    if (isAdmin) {
+      setHasEditAccess(true);
+      setIsAssignedUser(true);
+      return;
+    }
+    if (taskDetail.StatusName === 'Resolved') {
+      setHasEditAccess(false);
+      setIsAssignedUser(false);
+      return;
+    }
+    try {
+      const employeeIdVal = getSecureLSValue('employee_id');
+      if (!employeeIdVal) {
+        setHasEditAccess(false);
+        setIsAssignedUser(false);
+        return;
+      }
+      if (taskDetail.AssignedEmployeeId && String(taskDetail.AssignedEmployeeId) === String(employeeIdVal)) {
+        setIsAssignedUser(true);
+      } else {
+        setIsAssignedUser(false);
+      }
+      const resVerify = await fetch(`/api/tasks/task-assignments?action=verifyUser&employeeId=${employeeIdVal}&teamId=${taskDetail.TeamId}`);
+      const jsonVerify = await resVerify.json();
+
+      if (resVerify.ok && jsonVerify.isMapped) {
+        setHasEditAccess(true);
+      } else {
+        setHasEditAccess(false);
+      }
+    } catch (e) {
+      setHasEditAccess(false);
+      setIsAssignedUser(false);
     }
   };
   return (
@@ -824,6 +1046,16 @@ export default function SubcategoryTaskView() {
         </div>
 
         <div className="flex flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-col gap-1 w-full sm:w-auto">
+            <MultiSelectUserPopover 
+              data={teamsList}
+              fullOptions={hierarchyOptions}
+              selectedValues={selectedTeamsList}
+              // onSelect={setSelectedTeamsList}
+              onSelect={handleTeamSelectionChange}
+              placeholder="All Teams"
+            />
+          </div>
           <div className={cn("grid gap-2 w-full sm:w-auto")}>
             <Popover>
               <PopoverTrigger asChild>
@@ -922,14 +1154,27 @@ export default function SubcategoryTaskView() {
                       </div>
                     ) : (
                       columnTasks.map(task => {
+                        const canDrag = isAdmin || task.IsTeamMember === 1 || task.IsTeamMember === true;
                         const isOverdue = task.DueDate && new Date(task.DueDate) < new Date() && task.StatusName !== 'Resolved';
                         return (
                           <div
                             key={task.Id}
-                            draggable="true"
-                            onDragStart={(e) => handleDragStart(e, task)}
+                            // draggable="true"
+                            draggable={canDrag ? "true" : "false"}
+                            // onDragStart={(e) => handleDragStart(e, task)}
+                            onDragStart={(e) => {
+                              if (!canDrag) {
+                                e.preventDefault();
+                                return;
+                              }
+                              handleDragStart(e, task);
+                            }}
                             onClick={() => handleOpenEditModal(task.Id)}
-                            className="bg-card border border-primary/15 hover:border-primary/40 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing relative overflow-hidden group flex flex-col justify-between min-h-[140px]"
+                            className={cn(
+                              "bg-card border border-primary/15 hover:border-primary/40 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group flex flex-col justify-between min-h-[140px]",
+                              canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-not-allowed opacity-75" // 👈 యాక్సెస్ లేకపోతే కర్సర్ లాక్ అవుతుంది
+                            )}
+                            // className="bg-card border border-primary/15 hover:border-primary/40 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing relative overflow-hidden group flex flex-col justify-between min-h-[140px]"
                           >
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
                             
@@ -1239,7 +1484,66 @@ export default function SubcategoryTaskView() {
                         />
                       </div>
                     </div>
-
+                    {!!(taskDetail?.AssignedUserId && taskDetail?.StatusName === 'In Progress') && (
+                      <div className="space-y-4 border-t border-primary/10 pt-4">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-primary border-b border-primary/5 pb-2 mb-2">Section 2: Work Update & Status</h4>
+                        
+                        {!isAssignedUser && (
+                          <div className="p-3 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center gap-2 text-xs font-semibold border border-yellow-500/20">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>Only the assigned user can update hours, progress status, and reasons in this section.</span>
+                          </div>
+                        )}
+                        <div className="space-y-3 pt-1 pb-3 px-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-1.5">
+                              <Activity className="w-3.5 h-3.5" />
+                              Completion Progress
+                            </label>
+                            <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full shadow-sm">
+                              {formState.progressPct}%
+                            </span>
+                          </div>
+                          <div className="relative flex items-center w-full h-8 group">
+                            <div className="absolute w-full h-2.5 bg-muted-foreground/20 rounded-full overflow-hidden shadow-inner" />
+                            <div className="absolute w-full h-2.5 pointer-events-none z-0">
+                              {[10, 20, 30, 40, 50, 60, 70, 80, 90].map(dot => (
+                                <div 
+                                  key={dot} 
+                                  className="absolute top-0 w-[2px] h-full bg-background/60" 
+                                  style={{ left: `calc(${dot}% - 1px)` }} 
+                                />
+                              ))}
+                            </div>
+                            <div 
+                              className="absolute h-2.5 bg-gradient-to-r from-blue-500 via-primary to-indigo-500 rounded-full z-0"
+                              style={{ width: `${formState.progressPct}%` }}
+                            />
+                            <div 
+                              className="absolute h-5 w-5 bg-background border-2 border-primary rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)] z-10 pointer-events-none flex items-center justify-center"
+                              style={{ left: `calc(${formState.progressPct}% - 10px)` }}
+                            >
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              step="10"
+                              disabled={!isAssignedUser}
+                              value={formState.progressPct}
+                              onChange={e => handleProgressChange(e.target.value)}
+                              className="absolute z-20 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                            />
+                          </div>
+                          <div className="flex justify-between text-[9px] font-extrabold text-muted-foreground uppercase px-1">
+                            <span>Started</span>
+                            <span>Halfway</span>
+                            <span>Done</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {/* {taskDetail?.AssignedUserId && ( */}
                     {!!taskDetail?.AssignedUserId && (
                       <div className="space-y-4 border-t border-primary/10 pt-4">
@@ -1306,6 +1610,7 @@ export default function SubcategoryTaskView() {
                   <button
                     type="button"
                     onClick={handleResetForm}
+                    hidden={!hasEditAccess}
                     className="flex-1 py-3 text-xs font-bold uppercase rounded-xl border border-primary/20 text-muted-foreground hover:text-foreground hover:bg-primary/5 transition cursor-pointer"
                   >
                     Clear Form
@@ -1313,6 +1618,7 @@ export default function SubcategoryTaskView() {
                   
                   <button
                     type="submit"
+                    hidden={!hasEditAccess}
                     disabled={submitState !== 'idle' || (modalMode === 'edit' && !hasEditAccess)}
                     className="flex-1 py-3 text-xs font-bold uppercase rounded-xl transition flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{

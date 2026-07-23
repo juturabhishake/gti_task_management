@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     // const { subcategoryId, assignedUserId, actualHours, statusId, reason } = req.body;
-    const { subcategoryId, assignedUserId, actualHours, statusId, reason, taskDetails, workDate, dueDate, severity, targetStandardHours } = req.body;
+    const { subcategoryId, assignedUserId, actualHours, statusId, reason, taskDetails, workDate, dueDate, severity, targetStandardHours, progressPct } = req.body;
     try {
       const parsedSubcategoryId = parseInt(subcategoryId) || 0;
       const parsedAssignedUserId = parseInt(assignedUserId) || 0;
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       const escapedSeverity = (severity || '').replace(/'/g, "''");
       const escapedWorkDate = workDate ? workDate : '';
       const escapedDueDate = dueDate ? dueDate : '';
-
+      const parsedProgressPct = parseInt(progressPct) || 0;
       // let xmlBuilder = `<TaskAssignment>`;
       // xmlBuilder += `<SubcategoryId>${parsedSubcategoryId}</SubcategoryId>`;
       // xmlBuilder += `<AssignedUserId>${parsedAssignedUserId}</AssignedUserId>`;
@@ -46,6 +46,7 @@ export default async function handler(req, res) {
       xmlBuilder += `<DueDate>${escapedDueDate}</DueDate>`;
       xmlBuilder += `<Severity>${escapedSeverity}</Severity>`;
       xmlBuilder += `<TargetStandardHours>${parsedTargetStandardHours}</TargetStandardHours>`;
+      xmlBuilder += `<ProgressPct>${parsedProgressPct}</ProgressPct>`;
       xmlBuilder += `</TaskAssignment>`;
 
       const escapedXml = xmlBuilder.replace(/'/g, "''");
@@ -74,6 +75,8 @@ export default async function handler(req, res) {
         const escapedStartDate = startDate ? `'${startDate.replace(/'/g, "''")}'` : 'NULL';
         const escapedEndDate = endDate ? `'${endDate.replace(/'/g, "''")}'` : 'NULL';
         const isUnassignedViewVal = parseInt(req.query.isUnassignedView) || 0;
+        const escapedLoggedInEmployeeId = (req.query.loggedInEmployeeId || '').replace(/'/g, "''");
+        const escapedTeamIds = (req.query.teamIds || '').replace(/'/g, "''");
         const results = await prisma.$queryRawUnsafe(
           `EXEC dbo.SP_Get_Task_Assignments_Paged 
             @PageNumber = ${parsedPage}, 
@@ -82,7 +85,9 @@ export default async function handler(req, res) {
             @EmployeeId = '${escapedEmployeeId}',
             @StartDate = ${escapedStartDate},
             @EndDate = ${escapedEndDate},
-            @IsUnassignedView = ${isUnassignedViewVal}`
+            @IsUnassignedView = ${isUnassignedViewVal},
+            @TeamIds = '${escapedTeamIds}',
+            @LoggedInEmployeeId = '${escapedLoggedInEmployeeId}'`
         );
         return res.status(200).json({ data: results });
       } else if (action === 'single') {
