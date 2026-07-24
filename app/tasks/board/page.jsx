@@ -904,6 +904,24 @@ export default function SubcategoryTaskView() {
       container.scrollLeft += scrollSpeed;
     }
   };
+  const handleStatusChange = (newStatusId) => {
+    const selectedStatus = statuses.find(s => s.id === newStatusId);
+    const resolvedStatus = statuses.find(s => s.name === 'Resolved' || s.name === 'Done');
+    setFormState(prev => {
+      let updatedProgress = prev.progressPct;
+      if (selectedStatus && (selectedStatus.name === 'Resolved' || selectedStatus.name === 'Done')) {
+        updatedProgress = 100;
+      } 
+      else if (resolvedStatus && prev.statusId === resolvedStatus.id && newStatusId !== resolvedStatus.id) {
+        updatedProgress = 0;
+      }
+      return {
+        ...prev,
+        statusId: newStatusId,
+        progressPct: updatedProgress
+      };
+    });
+  };
   const verifyAccess = async () => {
     if (isAdmin) {
       setHasEditAccess(true);
@@ -1575,7 +1593,8 @@ export default function SubcategoryTaskView() {
                             <PopoverDropdown 
                               data={statuses}
                               selectedValue={formState.statusId}
-                              onSelect={val => setFormState(prev => ({ ...prev, statusId: val }))}
+                              // onSelect={val => setFormState(prev => ({ ...prev, statusId: val }))}
+                              onSelect={handleStatusChange}
                               placeholder="-- Select Status --"
                               disabled={!isAssignedUser}
                             />
