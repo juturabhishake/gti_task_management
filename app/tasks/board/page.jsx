@@ -1158,7 +1158,7 @@ export default function SubcategoryTaskView() {
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, col.id)}
                   // className="w-80 flex flex-col bg-card/40 border border-primary/10 rounded-2xl overflow-hidden shrink-0 animate-in fade-in duration-300"
-                  className="w-[85vw] sm:w-80 md:flex-1 md:min-w-[250px] flex flex-col bg-card/40 border border-primary/10 rounded-2xl overflow-hidden shrink-0 md:shrink animate-in fade-in duration-300"
+                  className="w-[85vw] sm:w-80 md:flex-1 md:min-w-[250px] flex flex-col bg-card/40 border border-primary/10 rounded-xl overflow-hidden shrink-0 md:shrink animate-in fade-in duration-300"
                 >
                   <div className="p-3.5 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
                     <span className="text-xs font-black uppercase tracking-wider text-foreground">{col.name}</span>
@@ -1272,7 +1272,7 @@ export default function SubcategoryTaskView() {
             "bg-card rounded-2xl p-6 shadow-2xl relative border border-primary/50 transition-all duration-300 flex flex-col justify-between overflow-y-auto z-[9999]",
             modalFullscreen 
               ? "fixed inset-0 w-screen h-screen rounded-none p-4 md:p-6" 
-              : "fixed w-[95vw] md:w-full md:max-w-4xl max-h-[90vh] rounded-2xl p-4 md:p-6"
+              : "fixed w-[95vw] md:w-full md:max-w-4xl max-h-[90vh] rounded-xl p-4 md:p-6"
           )}>
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <button 
