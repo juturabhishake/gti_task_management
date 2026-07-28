@@ -283,23 +283,23 @@ export default function AssignmentPage() {
   ] : [];
 
   return (
-    <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col p-3 md:p-6 overflow-hidden">
+    <div className="@container/main h-[92dvh] w-full bg-background text-foreground flex flex-col p-1 overflow-hidden">
       <div className="shrink-0 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+          <h1 className="text-xl md:text-3xl font-black tracking-tight flex items-center gap-3 px-3">
             <UserPlus className="w-6 h-6 md:w-8 md:h-8 text-primary" />
             Task Assignment Hub
           </h1>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-0 lg:gap-6 relative">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-0 lg:gap-4 relative">
         
         <div 
           className="order-1 lg:order-2 flex flex-col lg:w-8/12 min-h-0 shrink-0 lg:shrink relative"
           style={!isDesktop ? { height: `${splitPos}%`, flex: 'none' } : {}}
         >
-          <div className="shrink-0 bg-card border border-border/60 rounded-3xl p-4 mb-3 sm:mb-4 shadow-sm z-10 flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="shrink-0 bg-card border border-border/60 rounded-xl p-4 mb-3 sm:mb-4 shadow-sm z-10 flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="bg-primary/10 p-2.5 rounded-xl shrink-0">
                 <Layers className="w-5 h-5 md:w-6 md:h-6 text-primary" />
@@ -408,7 +408,7 @@ export default function AssignmentPage() {
         )}
 
         <div 
-          className="order-3 lg:order-1 flex flex-col flex-1 lg:w-4/12 bg-card border border-border/60 lg:rounded-3xl p-4 sm:p-5 lg:shadow-xl min-h-0 shrink-0 lg:shrink overflow-y-auto"
+          className="order-3 lg:order-1 flex flex-col flex-1 lg:w-4/12 bg-card border border-border/60 rounded-xl p-4 sm:p-5 lg:shadow-xl min-h-0 shrink-0 lg:shrink overflow-y-auto"
         >
           <div className="border-b border-border/50 pb-3 mb-4 shrink-0">
             <h3 className="font-extrabold text-base md:text-lg text-foreground flex items-center gap-2 uppercase tracking-wide">
