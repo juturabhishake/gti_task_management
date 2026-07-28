@@ -470,7 +470,8 @@ export default function CategoriesSubcategoriesPage() {
     //   setFeedback({ type: 'error', text: 'All fields are required' });
     //   return;
     // }
-    if (activeTab === 'subcategories' && (!formState.name || !formState.categoryId || !formState.project || !formState.maxHours || !formState.mediumHours || !formState.minHours)) {
+    // !formState.project || 
+    if (activeTab === 'subcategories' && (!formState.name || !formState.categoryId || !formState.maxHours || !formState.mediumHours || !formState.minHours)) {
       setFeedback({ type: 'error', text: 'All fields are required' });
       return;
     }
@@ -1086,7 +1087,7 @@ export default function CategoriesSubcategoriesPage() {
                     <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Project Name</label>
                     <input
                       type="text"
-                      required
+                      // required
                       value={formState.project}
                       onChange={e => setFormState(prev => ({ ...prev, project: e.target.value }))}
                       className="w-full text-xs rounded p-2 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold"

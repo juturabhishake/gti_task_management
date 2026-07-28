@@ -774,13 +774,13 @@ export default function SubcategoryTaskView() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (modalMode === 'create') {
-      if (!formState.name || !formState.project || !formState.categoryId || !formState.minHours || !formState.mediumHours || !formState.maxHours) {
+    if (modalMode === 'create') { //!formState.project ||
+      if (!formState.name || !formState.categoryId || !formState.minHours || !formState.mediumHours || !formState.maxHours) {
         setFeedback({ type: 'error', text: 'All form configuration fields are required' });
         return;
       }
     } else {
-      if (!formState.assignedUserId || !formState.workDate || !formState.dueDate || !formState.taskDetails || !formState.severity) {
+      if (!formState.assignedUserId || !formState.workDate || !formState.dueDate || !formState.taskDetails || !formState.severity || !formState.project) {
         setFeedback({ type: 'error', text: 'All assignment details are required' });
         return;
       }
@@ -823,6 +823,7 @@ export default function SubcategoryTaskView() {
             taskDetails: formState.taskDetails,
             workDate: formState.workDate,
             dueDate: formState.dueDate,
+            project: formState.project,
             severity: formState.severity,
             targetStandardHours: formState.targetStandardHours ? parseFloat(formState.targetStandardHours) : null,
             progressPct: parseInt(formState.progressPct)
@@ -1319,8 +1320,8 @@ export default function SubcategoryTaskView() {
                       <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Project Name</label>
                       <input
                         type="text"
-                        required
-                        placeholder="Enter parent project..."
+                        // required
+                        placeholder="Enter project (Optional)..."
                         value={formState.project}
                         onChange={e => setFormState(prev => ({ ...prev, project: e.target.value }))}
                         className="w-full text-xs rounded-xl p-3 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold placeholder:text-muted-foreground/60 transition focus:border-primary"
@@ -1392,10 +1393,10 @@ export default function SubcategoryTaskView() {
                         <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Subcategory Name</label>
                         <p className="text-sm font-extrabold text-foreground mt-0.5">{taskDetail?.SubcategoryName}</p>
                       </div>
-                      <div>
+                      {/* <div>
                         <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Project</label>
                         <p className="text-xs font-bold text-foreground mt-0.5">{taskDetail?.Project}</p>
-                      </div>
+                      </div> */}
                       <div>
                         <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Assigned Category</label>
                         <p className="text-xs font-semibold text-foreground mt-0.5">{taskDetail?.CategoryName}</p>
@@ -1440,7 +1441,17 @@ export default function SubcategoryTaskView() {
                             disabled={!hasEditAccess}
                           />
                         </div>
-
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Project Alignment</label>
+                          <input 
+                            type="text"
+                            placeholder="e.g. Core Infrastructure"
+                            disabled={!hasEditAccess}
+                            value={formState.project}
+                            onChange={e => setFormState(prev => ({ ...prev, project: e.target.value }))}
+                            className="w-full text-xs rounded p-2.5 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Work Date</label>
@@ -1637,7 +1648,7 @@ export default function SubcategoryTaskView() {
                   
                   <button
                     type="submit"
-                    hidden={!hasEditAccess}
+                    hidden={!hasEditAccess&& modalMode === 'edit'}
                     disabled={submitState !== 'idle' || (modalMode === 'edit' && !hasEditAccess)}
                     className="flex-1 py-3 text-xs font-bold uppercase rounded-xl transition flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{

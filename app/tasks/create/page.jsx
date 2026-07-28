@@ -224,9 +224,9 @@ export default function CreateTaskFormPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Task</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Task <span className="text-[10px] font-bold text-red-500">*</span></label>
               <input
                 type="text"
                 required
@@ -237,12 +237,12 @@ export default function CreateTaskFormPage() {
               />
             </div>
 
-            <div hidden className="space-y-1">
+            <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Project Name</label>
               <input
                 type="text"
                 // required
-                placeholder="Enter parent project..."
+                placeholder="Enter project (Optional)..."
                 value={formState.project}
                 onChange={e => setFormState(p => ({ ...p, project: e.target.value }))}
                 className="w-full text-xs rounded-xl p-3.5 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold placeholder:text-muted-foreground/60 transition focus:border-primary"
@@ -251,7 +251,7 @@ export default function CreateTaskFormPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Assigned Category Location</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Assigned Category Location <span className="text-[10px] font-bold text-red-500">*</span></label>
             <CustomCategorySelector
               data={categoryCatalog}
               selectedValue={formState.categoryId}
@@ -269,7 +269,7 @@ export default function CreateTaskFormPage() {
             <div className="grid lg:grid-cols-3 sm:grid-cols-1 gap-4">
               
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Min Hours</label>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Low (Hrs) <span className="text-[10px] font-bold text-red-500">*</span></label>
                 <input
                   type="number"
                   step="any"
@@ -282,7 +282,7 @@ export default function CreateTaskFormPage() {
               </div>
               
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Medium Hours</label>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Medium (Hrs) <span className="text-[10px] font-bold text-red-500">*</span></label>
                 <input
                   type="number"
                   step="any"
@@ -295,7 +295,7 @@ export default function CreateTaskFormPage() {
               </div>
               
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Max Hours</label>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">High (Hrs) <span className="text-[10px] font-bold text-red-500">*</span></label>
                 <input
                   type="number"
                   step="any"

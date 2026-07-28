@@ -102,6 +102,7 @@ export default function EditForm({ subcategoryId, onBack }) {
   const [statuses, setStatuses] = useState([]);
 
   const [formState, setFormState] = useState({
+    project: '',
     assignedUserId: '',
     actualHours: '',
     statusId: '',
@@ -175,6 +176,7 @@ export default function EditForm({ subcategoryId, onBack }) {
         const detail = jsonDetail.data;
         setTaskDetail(detail);
         setFormState({
+          project: detail.Project || '',
           assignedUserId: detail.AssignedUserId || '',
           actualHours: detail.ActualHours !== null ? String(detail.ActualHours) : '',
           statusId: detail.StatusId || '',
@@ -240,6 +242,7 @@ export default function EditForm({ subcategoryId, onBack }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subcategoryId: parseInt(subcategoryId),
+          project: formState.project,
           assignedUserId: parseInt(formState.assignedUserId),
           actualHours: formState.actualHours ? parseFloat(formState.actualHours) : null,
           statusId: formState.statusId ? parseInt(formState.statusId) : null,
@@ -308,7 +311,7 @@ export default function EditForm({ subcategoryId, onBack }) {
           <p className="text-base font-extrabold text-foreground mt-0.5">{taskDetail?.SubcategoryName}</p>
         </div>
 
-        <div>
+        <div hidden>
           <label className="text-[8px] font-bold uppercase tracking-wider text-primary">Project</label>
           <p className="text-sm font-bold text-foreground mt-0.5">{taskDetail?.Project}</p>
         </div>
@@ -360,7 +363,17 @@ export default function EditForm({ subcategoryId, onBack }) {
                 disabled={!hasEditAccess}
               />
             </div>
-
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Project</label>
+              <input 
+                type="text"
+                placeholder="e.g. Core Infrastructure"
+                disabled={!hasEditAccess}
+                value={formState.project}
+                onChange={e => setFormState(prev => ({ ...prev, project: e.target.value }))}
+                className="w-full text-xs rounded p-2.5 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Work Date</label>

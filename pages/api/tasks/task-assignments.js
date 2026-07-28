@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     // const { subcategoryId, assignedUserId, actualHours, statusId, reason } = req.body;
-    const { subcategoryId, assignedUserId, actualHours, statusId, reason, taskDetails, workDate, dueDate, severity, targetStandardHours, progressPct } = req.body;
+    const { subcategoryId, assignedUserId, actualHours, statusId, reason, taskDetails, workDate, dueDate, severity, targetStandardHours, progressPct, project } = req.body;
     try {
       const parsedSubcategoryId = parseInt(subcategoryId) || 0;
       const parsedAssignedUserId = parseInt(assignedUserId) || 0;
@@ -27,6 +27,7 @@ export default async function handler(req, res) {
       const escapedSeverity = (severity || '').replace(/'/g, "''");
       const escapedWorkDate = workDate ? workDate : '';
       const escapedDueDate = dueDate ? dueDate : '';
+      const escapedProject = (project || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, "''");
       const parsedProgressPct = parseInt(progressPct) || 0;
       // let xmlBuilder = `<TaskAssignment>`;
       // xmlBuilder += `<SubcategoryId>${parsedSubcategoryId}</SubcategoryId>`;
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
       xmlBuilder += `<TaskDetails>${escapedDetails}</TaskDetails>`;
       xmlBuilder += `<WorkDate>${escapedWorkDate}</WorkDate>`;
       xmlBuilder += `<DueDate>${escapedDueDate}</DueDate>`;
+      xmlBuilder += `<Project>${escapedProject}</Project>`;
       xmlBuilder += `<Severity>${escapedSeverity}</Severity>`;
       xmlBuilder += `<TargetStandardHours>${parsedTargetStandardHours}</TargetStandardHours>`;
       xmlBuilder += `<ProgressPct>${parsedProgressPct}</ProgressPct>`;

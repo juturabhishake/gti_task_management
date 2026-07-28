@@ -1920,8 +1920,9 @@ export default function HierarchyExplorer() {
                 <input type="text" required value={formState.name} onChange={e => setFormState(p => ({ ...p, name: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Project Name</label>
-                <input type="text" required value={formState.project} onChange={e => setFormState(p => ({ ...p, project: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
+                <label className="text-[9px] font-bold uppercase tracking-wider text-primary">Project Name</label> 
+                {/* required */}
+                <input type="text" value={formState.project} onChange={e => setFormState(p => ({ ...p, project: e.target.value }))} className="w-full text-xs rounded p-2 focus:outline-none bg-transparent border border-primary/30" />
               </div>
               <div className="pt-2 border-t border-primary/10">
                 <label className="text-[10px] font-extrabold uppercase tracking-widest text-primary block mb-1">Severity :</label>
