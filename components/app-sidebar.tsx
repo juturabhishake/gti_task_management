@@ -115,6 +115,11 @@ const data = {
           icon: IconListDetails,
         },
         {
+          title: "Assignment Board",
+          url: "/tasks/assignment-board",
+          icon: IconUsers,
+        },
+        {
           title: "Unassigned Tasks",
           url: "/tasks/unassigned_tasks",
           icon: IconDatabase,

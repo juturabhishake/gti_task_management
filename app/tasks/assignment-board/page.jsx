@@ -7,6 +7,10 @@ import {
 } from 'lucide-react';
 import * as RadixPopover from '@radix-ui/react-popover';
 import { cn } from "@/lib/utils";
+import { useAccessCheck } from '@/lib/useAccessCheck';
+import { useAdminAccessCheck } from "@/lib/checkAdmin";
+
+const PAGE_ID_FOR_THIS_FORM = 2045;
 
 function PopoverDropdown({ data = [], selectedValue, onSelect, placeholder, disabled, loading }) {
   const [open, setOpen] = useState(false);
@@ -82,6 +86,8 @@ function PopoverDropdown({ data = [], selectedValue, onSelect, placeholder, disa
 }
 
 export default function AssignmentPage() {
+  const { isLoading: isAccessLoading, hasAccess, accessLevel } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
+  const { hasAccess: isAdmin } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
