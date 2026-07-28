@@ -164,12 +164,12 @@ export default function CreateTaskFormPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formState.name || !formState.project || !formState.categoryId || !formState.maxHours || !formState.mediumHours || !formState.minHours) {
+    e.preventDefault(); //|| !formState.project
+    if (!formState.name || !formState.categoryId || !formState.maxHours || !formState.mediumHours || !formState.minHours) {
       setFeedback({ type: 'error', text: 'All form configuration fields are required' });
       return;
     }
-
+    
     setSubmitState('loading');
     setFeedback(null);
 
@@ -224,7 +224,7 @@ export default function CreateTaskFormPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Task</label>
               <input
@@ -237,11 +237,11 @@ export default function CreateTaskFormPage() {
               />
             </div>
 
-            <div className="space-y-1">
+            <div hidden className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Project Name</label>
               <input
                 type="text"
-                required
+                // required
                 placeholder="Enter parent project..."
                 value={formState.project}
                 onChange={e => setFormState(p => ({ ...p, project: e.target.value }))}
