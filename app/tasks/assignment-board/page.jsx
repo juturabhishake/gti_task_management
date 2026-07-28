@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, Check, Clock, Layers, Calendar as CalendarIcon, 
-  UserPlus, Loader2, AlertCircle, CheckCircle2, ChevronDown, AlignLeft, ArrowRight 
+  UserPlus, Loader2, AlertCircle, CheckCircle2, ChevronDown, AlignLeft, ArrowRight
 } from 'lucide-react';
 import * as RadixPopover from '@radix-ui/react-popover';
 import { cn } from "@/lib/utils";
@@ -101,6 +101,44 @@ export default function AssignmentPage() {
     dueDate: '',
     taskDetails: ''
   });
+
+  const [isDesktop, setIsDesktop] = useState(true);
+  const [splitPos, setSplitPos] = useState(45);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      if (!isDragging) return;
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+      const headerOffset = 80;
+      const containerHeight = window.innerHeight - headerOffset;
+      const newPos = ((clientY - headerOffset) / containerHeight) * 100;
+      setSplitPos(Math.max(20, Math.min(newPos, 80)));
+    };
+    
+    const handleUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('mouseup', handleUp);
+      window.addEventListener('touchend', handleUp);
+    }
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchend', handleUp);
+    };
+  }, [isDragging]);
 
   const fetchUnassignedTasks = async () => {
     try {
@@ -233,177 +271,59 @@ export default function AssignmentPage() {
   };
 
   const severityOptions = selectedTask ? [
-    { id: 'Min', label: 'Low', hours: selectedTask.MinHours || 0, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/20' },
-    { id: 'Medium', label: 'Medium', hours: selectedTask.MediumHours || 0, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/20' },
-    { id: 'Max', label: 'High', hours: selectedTask.MaxHours || 0, color: 'bg-rose-500/10 text-rose-600 border-rose-500/30 hover:border-rose-500/60 hover:bg-rose-500/20' }
+    { id: 'Min', label: 'Low', hours: selectedTask.MinHours || 0, activeColor: 'bg-emerald-500/10 border-emerald-500 text-emerald-600 ring-emerald-500', idleColor: 'border-emerald-500/40 text-emerald-600/70 hover:bg-emerald-500/5' },
+    { id: 'Medium', label: 'Medium', hours: selectedTask.MediumHours || 0, activeColor: 'bg-amber-500/10 border-amber-500 text-amber-600 ring-amber-500', idleColor: 'border-amber-500/40 text-amber-600/70 hover:bg-amber-500/5' },
+    { id: 'Max', label: 'High', hours: selectedTask.MaxHours || 0, activeColor: 'bg-rose-500/10 border-rose-500 text-rose-600 ring-rose-500', idleColor: 'border-rose-500/40 text-rose-600/70 hover:bg-rose-500/5' }
   ] : [];
 
   return (
-    <div className="min-h-[calc(100vh-60px)] bg-background text-foreground flex flex-col p-4 md:p-6 animate-in fade-in duration-500">
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="h-[100dvh] w-full bg-background text-foreground flex flex-col p-3 md:p-6 overflow-hidden">
+      <div className="shrink-0 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
-            <UserPlus className="w-8 h-8 text-primary" />
+          <h1 className="text-xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+            <UserPlus className="w-6 h-6 md:w-8 md:h-8 text-primary" />
             Task Assignment Hub
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Select a pending task to configure and assign to team members.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-0 lg:gap-6 relative">
         
-        <div className="lg:col-span-4 flex flex-col space-y-5 bg-card border border-border/60 rounded-3xl p-6 shadow-xl sticky top-6 transition-all">
-          <div className="border-b border-border/50 pb-4 mb-2">
-            <h3 className="font-extrabold text-lg text-foreground flex items-center gap-2 uppercase tracking-wide">
-              <AlignLeft className="w-5 h-5 text-primary" />
-              Assignment Parameters
-            </h3>
-            {!selectedTask && (
-              <p className="text-xs text-muted-foreground mt-2 font-medium">Please select a task from the list to configure assignment parameters.</p>
-            )}
-          </div>
-
-          <div className={cn("space-y-6 transition-opacity duration-300", !selectedTask ? "opacity-40 pointer-events-none select-none filter blur-[1px]" : "opacity-100")}>
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                Users <span className="text-muted-foreground/60 text-[9px]">(Filtered by Team)</span>
-              </label>
-              <PopoverDropdown 
-                data={teamUsers}
-                selectedValue={formState.assignedUserId}
-                onSelect={(val) => setFormState(prev => ({ ...prev, assignedUserId: val }))}
-                placeholder="Select Assignee..."
-                disabled={!selectedTask}
-                loading={loadingUsers}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-xs font-black uppercase tracking-widest text-primary">Task Severity</label>
-              <div className="grid grid-cols-3 gap-3">
-                {severityOptions.map((sev) => {
-                  const isActive = formState.severity === sev.id;
-                  return (
-                    <button
-                      key={sev.id}
-                      type="button"
-                      onClick={() => handleSeverityChange(sev.id)}
-                      className={cn(
-                        "flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer",
-                        sev.color,
-                        isActive ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 border-transparent shadow-lg font-black" : "border-dashed"
-                      )}
-                    >
-                      <span className="text-sm">{sev.label}</span>
-                      <span className="text-[10px] font-bold mt-1 opacity-80">{sev.hours} Hrs</span>
-                    </button>
-                  );
-                })}
+        <div 
+          className="order-1 lg:order-2 flex flex-col lg:w-8/12 min-h-0 shrink-0 lg:shrink relative"
+          style={!isDesktop ? { height: `${splitPos}%`, flex: 'none' } : {}}
+        >
+          <div className="shrink-0 bg-card border border-border/60 rounded-3xl p-4 mb-3 sm:mb-4 shadow-sm z-10 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="bg-primary/10 p-2.5 rounded-xl shrink-0">
+                <Layers className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-primary">Project Alignment</label>
-              <input 
-                type="text"
-                placeholder="e.g. Core Infrastructure"
-                value={formState.project}
-                onChange={e => setFormState(prev => ({ ...prev, project: e.target.value }))}
-                className="w-full text-sm bg-muted/30 border border-border/80 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-semibold transition-all"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
-                  <CalendarIcon className="w-3.5 h-3.5" /> Work Date
-                </label>
-                <input 
-                  type="date"
-                  value={formState.workDate}
-                  onChange={e => setFormState(prev => ({ ...prev, workDate: e.target.value }))}
-                  className="w-full text-sm bg-muted/30 border border-border/80 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-semibold transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
-                  <CalendarIcon className="w-3.5 h-3.5" /> Due Date
-                </label>
-                <input 
-                  type="date"
-                  value={formState.dueDate}
-                  onChange={e => setFormState(prev => ({ ...prev, dueDate: e.target.value }))}
-                  className="w-full text-sm bg-muted/30 border border-border/80 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-semibold transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-primary">Task Detail / Remark</label>
-              <textarea 
-                rows={4}
-                placeholder="Provide comprehensive details or remarks for the assignee..."
-                value={formState.taskDetails}
-                onChange={e => setFormState(prev => ({ ...prev, taskDetails: e.target.value }))}
-                className="w-full text-sm bg-muted/30 border border-border/80 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-medium transition-all resize-none"
-              />
-            </div>
-
-            {feedback && (
-              <div className={cn(
-                "p-3.5 rounded-xl flex items-start gap-3 text-xs font-bold border animate-in zoom-in-95",
-                feedback.type === 'error' ? "bg-red-500/10 text-red-600 border-red-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-              )}>
-                {feedback.type === 'error' ? <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />}
-                <p>{feedback.text}</p>
-              </div>
-            )}
-
-            <button 
-              onClick={handleAssignTask}
-              disabled={submitState !== 'idle' || !selectedTask}
-              className="w-full py-3.5 px-4 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs rounded-xl shadow-lg hover:shadow-xl hover:translate-y-[-2px] active:translate-y-[1px] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
-            >
-              {submitState === 'loading' && <Loader2 className="w-4 h-4 animate-spin" />}
-              {submitState === 'success' && <Check className="w-4 h-4" />}
-              {submitState === 'idle' && <CheckCircle2 className="w-4 h-4" />}
-              <span>{submitState === 'loading' ? 'Processing...' : submitState === 'success' ? 'Assigned' : 'Finalize Assignment'}</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="lg:col-span-8 flex flex-col space-y-6">
-          <div className="bg-card border border-border/60 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2.5 rounded-xl">
-                <Layers className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-black tracking-tight">Unassigned Tasks</h2>
-                <p className="text-xs font-semibold text-muted-foreground">{filteredTasks.length} pending allocation</p>
+              <div className="flex-1">
+                <h2 className="text-base md:text-lg font-black tracking-tight">Unassigned Tasks</h2>
+                <p className="text-[10px] md:text-xs font-semibold text-muted-foreground">{filteredTasks.length} pending allocation</p>
               </div>
             </div>
             
-            <div className="relative w-full sm:w-80">
+            <div className="relative w-full sm:w-80 shrink-0">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input 
                 type="text"
                 placeholder="Search tasks, teams, groups..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-muted/40 border border-border/80 rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium transition-all"
+                className="w-full bg-muted/40 border border-border/80 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium transition-all"
               />
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col space-y-4 max-h-[calc(100vh-220px)] overflow-y-auto pr-2 scrollbar-thin pb-10">
+          <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 pb-4 pt-1 px-1">
             {loadingTasks ? (
-              <div className="w-full h-64 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border/60 rounded-3xl">
+              <div className="w-full h-full min-h-[200px] flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border/60 rounded-xl">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 <p className="text-sm font-bold text-muted-foreground animate-pulse">Retrieving pending tasks...</p>
               </div>
             ) : filteredTasks.length === 0 ? (
-              <div className="w-full h-64 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border/60 rounded-3xl text-muted-foreground">
+              <div className="w-full h-full min-h-[200px] flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border/60 rounded-xl text-muted-foreground">
                 <CheckCircle2 className="w-10 h-10 opacity-30" />
                 <p className="text-sm font-bold">No tasks available for assignment.</p>
               </div>
@@ -413,13 +333,13 @@ export default function AssignmentPage() {
                 return (
                   <div 
                     key={task.Id}
-                    onClick={() => setSelectedTaskId(task.Id)}
+                    onClick={() => setSelectedTaskId(prev => prev === task.Id ? null : task.Id)}
                     className={cn(
-                      "group flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-card border rounded-2xl p-4 sm:p-5 transition-all duration-200 cursor-pointer overflow-hidden relative shadow-sm",
-                      isSelected ? "border-primary bg-primary/5 shadow-md scale-[1.01]" : "border-border/60 hover:border-primary/40 hover:shadow-md"
+                      "group flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-card rounded-xl p-4 transition-all duration-200 cursor-pointer relative shrink-0",
+                      isSelected ? "bg-primary/10 shadow-md scale-[1.01] z-10" : "border-2 border-border/60 hover:border-primary/40 shadow-sm"
                     )}
                   >
-                    {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary" />}
+                    {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary rounded-l-xl" />}
                     
                     <div className="flex items-center justify-center w-6 sm:w-10 shrink-0">
                       <div className={cn(
@@ -431,24 +351,24 @@ export default function AssignmentPage() {
                     </div>
 
                     <div className="flex-1 flex flex-col min-w-0">
-                      <h4 className={cn("text-base font-black truncate transition-colors", isSelected ? "text-primary" : "text-foreground")}>
+                      <h4 className={cn("text-[13px] md:text-sm font-black truncate transition-colors", isSelected ? "text-primary" : "text-foreground")}>
                         {task.SubcategoryName}
                       </h4>
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-bold text-muted-foreground tracking-wide border border-border/60 truncate max-w-[120px]">
-                          {task.GroupName || 'Unassigned Group'}
+                        <span className="bg-muted px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold text-muted-foreground tracking-wide border border-border/60 truncate max-w-[100px] md:max-w-[120px]">
+                          {task.GroupName || 'Unassigned'}
                         </span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                        <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-bold text-muted-foreground tracking-wide border border-border/60 truncate max-w-[120px]">
-                          {task.DeptName || 'Unassigned Dept'}
+                        <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0" />
+                        <span className="bg-muted px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold text-muted-foreground tracking-wide border border-border/60 truncate max-w-[100px] md:max-w-[120px]">
+                          {task.DeptName || 'Unassigned'}
                         </span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                        <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-bold text-muted-foreground tracking-wide border border-border/60 truncate max-w-[120px]">
-                          {task.SectionName || 'Unassigned Section'}
+                        <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0" />
+                        <span className="bg-muted px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold text-muted-foreground tracking-wide border border-border/60 truncate max-w-[100px] md:max-w-[120px]">
+                          {task.SectionName || 'Unassigned'}
                         </span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                        <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-black tracking-wide truncate max-w-[120px]">
-                          {task.TeamName || 'Unassigned Team'}
+                        <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0" />
+                        <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[9px] md:text-[10px] font-black tracking-wide truncate max-w-[100px] md:max-w-[120px]">
+                          {task.TeamName || 'Unassigned'}
                         </span>
                       </div>
                     </div>
@@ -468,6 +388,137 @@ export default function AssignmentPage() {
                 );
               })
             )}
+          </div>
+        </div>
+
+        {!isDesktop && (
+          <div
+            className="order-2 shrink-0 h-6 flex items-center justify-center cursor-row-resize touch-none z-50 bg-background"
+            onMouseDown={() => setIsDragging(true)}
+            onTouchStart={() => setIsDragging(true)}
+          >
+            <div className="w-12 h-1.5 bg-border rounded-full" />
+          </div>
+        )}
+
+        <div 
+          className="order-3 lg:order-1 flex flex-col flex-1 lg:w-4/12 bg-card border border-border/60 lg:rounded-3xl p-4 sm:p-5 lg:shadow-xl min-h-0 shrink-0 lg:shrink overflow-y-auto"
+        >
+          <div className="border-b border-border/50 pb-3 mb-4 shrink-0">
+            <h3 className="font-extrabold text-base md:text-lg text-foreground flex items-center gap-2 uppercase tracking-wide">
+              <AlignLeft className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+              Parameters
+            </h3>
+            {!selectedTask && (
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-1.5 font-medium">Please select a task from the list to configure assignment parameters.</p>
+            )}
+          </div>
+
+          <div className={cn("space-y-5 transition-opacity duration-300", !selectedTask ? "opacity-40 pointer-events-none select-none filter blur-[1px]" : "opacity-100")}>
+            <div className="space-y-2">
+              <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                Users <span className="text-muted-foreground/60 text-[9px]">(Filtered by Team)</span>
+              </label>
+              <PopoverDropdown 
+                data={teamUsers}
+                selectedValue={formState.assignedUserId}
+                onSelect={(val) => setFormState(prev => ({ ...prev, assignedUserId: val }))}
+                placeholder="Select Assignee..."
+                disabled={!selectedTask}
+                loading={loadingUsers}
+              />
+            </div>
+
+            <div className="space-y-2.5">
+              <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary">Task Severity</label>
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
+                {severityOptions.map((sev) => {
+                  const isActive = formState.severity === sev.id;
+                  return (
+                    <button
+                      key={sev.id}
+                      type="button"
+                      onClick={() => handleSeverityChange(sev.id)}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-2.5 md:p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer",
+                        isActive ? cn("shadow-md font-black ring-1", sev.activeColor) : cn("border-dashed", sev.idleColor)
+                      )}
+                    >
+                      <span className="text-xs md:text-sm">{sev.label}</span>
+                      <span className="text-[9px] md:text-[10px] font-bold mt-1 opacity-80">{sev.hours} Hrs</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary">Project Alignment</label>
+              <input 
+                type="text"
+                placeholder="e.g. Core Infrastructure"
+                value={formState.project}
+                onChange={e => setFormState(prev => ({ ...prev, project: e.target.value }))}
+                className="w-full text-xs md:text-sm bg-muted/30 border border-border/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-semibold transition-all"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                  <CalendarIcon className="w-3.5 h-3.5" /> Work Date
+                </label>
+                <input 
+                  type="date"
+                  value={formState.workDate}
+                  onChange={e => setFormState(prev => ({ ...prev, workDate: e.target.value }))}
+                  className="w-full text-xs md:text-sm bg-muted/30 border border-border/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-semibold transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                  <CalendarIcon className="w-3.5 h-3.5" /> Due Date
+                </label>
+                <input 
+                  type="date"
+                  value={formState.dueDate}
+                  onChange={e => setFormState(prev => ({ ...prev, dueDate: e.target.value }))}
+                  className="w-full text-xs md:text-sm bg-muted/30 border border-border/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-semibold transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary">Task Detail / Remark</label>
+              <textarea 
+                rows={3}
+                placeholder="Provide comprehensive details or remarks for the assignee..."
+                value={formState.taskDetails}
+                onChange={e => setFormState(prev => ({ ...prev, taskDetails: e.target.value }))}
+                className="w-full text-xs md:text-sm bg-muted/30 border border-border/80 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-medium transition-all"
+              />
+            </div>
+
+            {feedback && (
+              <div className={cn(
+                "p-3 rounded-xl flex items-start gap-2.5 text-xs font-bold border animate-in zoom-in-95",
+                feedback.type === 'error' ? "bg-red-500/10 text-red-600 border-red-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+              )}>
+                {feedback.type === 'error' ? <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />}
+                <p>{feedback.text}</p>
+              </div>
+            )}
+
+            <button 
+              onClick={handleAssignTask}
+              disabled={submitState !== 'idle' || !selectedTask}
+              className="cursor-pointer w-full py-3 px-4 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs rounded-xl shadow-lg hover:shadow-xl hover:translate-y-[-2px] active:translate-y-[1px] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-2"
+            >
+              {submitState === 'loading' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {submitState === 'success' && <Check className="w-4 h-4" />}
+              {submitState === 'idle' && <CheckCircle2 className="w-4 h-4" />}
+              <span>{submitState === 'loading' ? 'Processing...' : submitState === 'success' ? 'Assigned' : 'Assign'}</span>
+            </button>
           </div>
         </div>
 
