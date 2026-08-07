@@ -622,7 +622,7 @@ export default function TeamPerformance() {
   };
 
   return (
-    <div className="@container/main min-h-screen bg-background text-foreground flex flex-col p-1 space-y-6 w-full animate-in fade-in duration-300 max-w-[1600px] mx-auto">
+    <div className="@container/main min-h-screen bg-background text-foreground flex flex-col p-1 space-y-6 w-full animate-in fade-in duration-300 mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/60 pb-5 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
