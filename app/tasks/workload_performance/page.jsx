@@ -8,7 +8,7 @@ import {
 import * as RadixPopover from '@radix-ui/react-popover';
 import SecureLS from 'secure-ls';
 import { cn } from "@/lib/utils";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, LabelList, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useAccessCheck } from '@/lib/useAccessCheck';
 import { useAdminAccessCheck } from "@/lib/checkAdmin";
@@ -25,6 +25,18 @@ const getSecureLSValue = (key) => {
   }
   return '';
 };
+
+const toNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+const normalizeMainRow = (row) => ({
+  ...row,
+  TargetHours: toNumber(row?.TargetHours),
+  ActualHours: toNumber(row?.ActualHours),
+  TotalTasks: toNumber(row?.TotalTasks),
+});
 
 function FilterPopover({ options = [], selected = [], onChange, onClear }) {
   const [open, setOpen] = useState(false);
@@ -111,7 +123,7 @@ function MultiSelectHierarchyPopover({ data = [], selectedValues = [], onSelect,
         </button>
       </RadixPopover.Trigger>
       <RadixPopover.Portal>
-        <RadixPopover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] md:w-80 bg-card border border-primary/30 rounded-xl shadow-2xl p-2 animate-in fade-in-80 zoom-in-95 duration-150" sideOffset={6} align="start">
+        <RadixPopover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] md:w-80 bg-card border border-primary/30 rounded-2xl shadow-2xl p-2 animate-in fade-in-80 zoom-in-95 duration-150" sideOffset={6} align="start">
           <input 
             type="text" 
             placeholder="Search..."
@@ -191,7 +203,11 @@ function UserTasksSubTable({ userId, date }) {
         const res = await fetch(`/api/tasks/workload?action=userTasks&userId=${userId}&date=${date}`);
         const json = await res.json();
         if (res.ok && json.data) {
-          setTasks(json.data);
+          setTasks(json.data.map(t => ({
+            ...t,
+            TargetHours: toNumber(t.TargetHours),
+            ActualHours: toNumber(t.ActualHours)
+          })));
         }
       } catch (e) {
         console.error(e);
@@ -220,20 +236,30 @@ function UserTasksSubTable({ userId, date }) {
     const { column, direction } = sorting;
     if (!column || direction === 'none') return data;
     return [...data].sort((a, b) => {
-      const valA = String(a[column] || '').toLowerCase();
-      const valB = String(b[column] || '').toLowerCase();
+      let valA = a[column];
+      let valB = b[column];
+      if (['TargetHours', 'ActualHours'].includes(column)) {
+        valA = toNumber(valA);
+        valB = toNumber(valB);
+      } else {
+        valA = String(valA || '').toLowerCase();
+        valB = String(valB || '').toLowerCase();
+      }
       if (valA < valB) return direction === 'asc' ? -1 : 1;
       if (valA > valB) return direction === 'asc' ? 1 : -1;
       return 0;
     });
   };
 
-  const getUniqueValues = (key) => Array.from(new Set(tasks.map(item => item[key]).filter(Boolean)));
+  const getUniqueValues = (key) => Array.from(new Set(tasks.map(item => {
+    if (key === 'TargetHours' || key === 'ActualHours') return String(toNumber(item[key]));
+    return String(item?.[key] ?? '');
+  }).filter(value => value !== '')));
 
   const toggleFilterValue = (column, value) => {
     setColumnFilters(prev => {
-      const active = prev[column];
-      const next = active.includes(value) ? active.filter(v => v !== value) : [...active, value];
+      const active = prev[column] || [];
+      const next = active.includes(String(value)) ? active.filter(v => v !== String(value)) : [...active, String(value)];
       return { ...prev, [column]: next };
     });
   };
@@ -243,20 +269,33 @@ function UserTasksSubTable({ userId, date }) {
   const processedTasks = useMemo(() => {
     let output = [...tasks];
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.trim().toLowerCase();
       output = output.filter(t => {
-        const searchStr = `${t.TaskName} ${t.Status} ${t.TargetHours} ${t.ActualHours}`.toLowerCase();
+        const searchStr = [
+          t?.TaskName,
+          t?.Status,
+          toNumber(t?.TargetHours),
+          toNumber(t?.ActualHours)
+        ].map(value => String(value ?? '')).join(' ').toLowerCase();
         return searchStr.includes(query);
       });
     }
     Object.keys(columnFilters).forEach(col => {
-      const selectedFilters = columnFilters[col];
-      if (selectedFilters && selectedFilters.length > 0) {
-        output = output.filter(item => selectedFilters.includes(String(item[col])));
+      const selectedFilters = columnFilters[col] || [];
+      if (selectedFilters.length > 0) {
+        output = output.filter(item => {
+          let val = item[col];
+          if (col === 'TargetHours' || col === 'ActualHours') val = toNumber(val);
+          return selectedFilters.includes(String(val ?? ''));
+        });
       }
     });
     return applySorting(output);
   }, [tasks, searchQuery, columnFilters, sorting]);
+
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchQuery, columnFilters, sorting]);
 
   const totalPages = Math.ceil(processedTasks.length / pagination.size) || 1;
   const pagedTasks = processedTasks.slice((pagination.page - 1) * pagination.size, pagination.page * pagination.size);
@@ -322,7 +361,7 @@ function UserTasksSubTable({ userId, date }) {
                       <SortIcon column="TargetHours" sorting={sorting} />
                     </div>
                     <FilterPopover 
-                      options={getUniqueValues('TargetHours').map(String)} 
+                      options={getUniqueValues('TargetHours')} 
                       selected={columnFilters.TargetHours} 
                       onChange={val => toggleFilterValue('TargetHours', val)} 
                       onClear={() => clearColumnFilter('TargetHours')}
@@ -336,7 +375,7 @@ function UserTasksSubTable({ userId, date }) {
                       <SortIcon column="ActualHours" sorting={sorting} />
                     </div>
                     <FilterPopover 
-                      options={getUniqueValues('ActualHours').map(String)} 
+                      options={getUniqueValues('ActualHours')} 
                       selected={columnFilters.ActualHours} 
                       onChange={val => toggleFilterValue('ActualHours', val)} 
                       onClear={() => clearColumnFilter('ActualHours')}
@@ -375,17 +414,11 @@ function UserTasksSubTable({ userId, date }) {
                         {task.Status || 'To Do'}
                       </span>
                     </td>
-                    <td className="p-3 whitespace-nowrap text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Target className="w-3.5 h-3.5 text-primary/60" />
-                        {task.TargetHours}
-                      </div>
+                    <td className="p-3 whitespace-nowrap text-muted-foreground flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-primary/60" /> {task.TargetHours}
                     </td>
-                    <td className="p-3 whitespace-nowrap text-primary">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        {task.ActualHours}
-                      </div>
+                    <td className="p-3 whitespace-nowrap text-primary flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" /> {task.ActualHours}
                     </td>
                   </tr>
                 ))
@@ -490,7 +523,12 @@ export default function WorkloadSummary() {
         const res = await fetch(`/api/tasks/workload?action=dashboard&date=${selectedDate}&teamIds=${tIds}`);
         const json = await res.json();
         if (res.ok && json.data) {
-          setDashboardData(json.data);
+          setDashboardData({
+            ...json.data,
+            mainTable: Array.isArray(json.data.mainTable) ? json.data.mainTable.map(normalizeMainRow) : [],
+            hoursChart: Array.isArray(json.data.hoursChart) ? json.data.hoursChart : [],
+            statusChart: Array.isArray(json.data.statusChart) ? json.data.statusChart : []
+          });
         }
       } catch (e) {
         console.error(e);
@@ -522,12 +560,9 @@ export default function WorkloadSummary() {
     return [...data].sort((a, b) => {
       let valA = a[column];
       let valB = b[column];
-      if (column === 'TotalHours') {
-        valA = parseFloat(a.ActualHours || 0);
-        valB = parseFloat(b.ActualHours || 0);
-      } else if (column === 'TotalTasks') {
-        valA = parseInt(a.TotalTasks || 0);
-        valB = parseInt(b.TotalTasks || 0);
+      if (['TargetHours', 'ActualHours', 'TotalHours', 'TotalTasks'].includes(column)) {
+        valA = toNumber(valA);
+        valB = toNumber(valB);
       } else {
         valA = String(valA || '').toLowerCase();
         valB = String(valB || '').toLowerCase();
@@ -540,16 +575,15 @@ export default function WorkloadSummary() {
 
   const getUniqueValues = (key) => {
     return Array.from(new Set(dashboardData.mainTable.map(item => {
-      if (key === 'TotalHours') return String(item.ActualHours || '0');
-      if (key === 'TotalTasks') return String(item.TotalTasks || '0');
-      return item[key];
-    }).filter(Boolean)));
+      if (key === 'TargetHours' || key === 'ActualHours' || key === 'TotalHours' || key === 'TotalTasks') return String(toNumber(item[key]));
+      return String(item?.[key] ?? '');
+    }).filter(value => value !== '')));
   };
 
   const toggleFilterValue = (column, value) => {
     setColumnFilters(prev => {
-      const active = prev[column];
-      const next = active.includes(value) ? active.filter(v => v !== value) : [...active, value];
+      const active = prev[column] || [];
+      const next = active.includes(String(value)) ? active.filter(v => v !== String(value)) : [...active, String(value)];
       return { ...prev, [column]: next };
     });
   };
@@ -559,25 +593,38 @@ export default function WorkloadSummary() {
   const processedTable = useMemo(() => {
     let output = [...dashboardData.mainTable];
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      output = output.filter(t => {
-        const searchStr = `${t.Name} ${t.Role} ${t.GroupName} ${t.DeptName} ${t.SectionName} ${t.TeamName}`.toLowerCase();
+      const query = searchQuery.trim().toLowerCase();
+      output = output.filter(row => {
+        const searchStr = [
+          row?.Name,
+          row?.Role,
+          row?.GroupName,
+          row?.DeptName,
+          row?.SectionName,
+          row?.TeamName,
+          toNumber(row?.TotalTasks),
+          toNumber(row?.TargetHours),
+          toNumber(row?.ActualHours)
+        ].map(value => String(value ?? '')).join(' ').toLowerCase();
         return searchStr.includes(query);
       });
     }
     Object.keys(columnFilters).forEach(col => {
-      const selectedFilters = columnFilters[col];
-      if (selectedFilters && selectedFilters.length > 0) {
+      const selectedFilters = columnFilters[col] || [];
+      if (selectedFilters.length > 0) {
         output = output.filter(item => {
           let val = item[col];
-          if (col === 'TotalHours') val = String(item.ActualHours || '0');
-          if (col === 'TotalTasks') val = String(item.TotalTasks || '0');
-          return selectedFilters.includes(String(val));
+          if (['TargetHours', 'ActualHours', 'TotalHours', 'TotalTasks'].includes(col)) val = toNumber(val);
+          return selectedFilters.includes(String(val ?? ''));
         });
       }
     });
     return applySorting(output);
   }, [dashboardData.mainTable, searchQuery, columnFilters, sorting]);
+
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchQuery, columnFilters, sorting]);
 
   const totalPages = Math.ceil(processedTable.length / pagination.size) || 1;
   const pagedTable = processedTable.slice((pagination.page - 1) * pagination.size, pagination.page * pagination.size);
@@ -586,7 +633,7 @@ export default function WorkloadSummary() {
   const setSize = (s) => setPagination({ page: 1, size: s });
 
   return (
-    <div className="@container/main min-h-screen bg-background text-foreground flex flex-col animate-in fade-in duration-500 font-sans">
+    <div className="@container/main min-h-screen bg-background text-foreground flex flex-col p-1 animate-in fade-in duration-500 font-sans">
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-2 bg-card border border-primary/20 rounded-xl p-4 md:p-5 shadow-lg">
         <div>
           <h1 className="text-xl md:text-3xl font-black tracking-tight flex items-center gap-3 text-primary">
@@ -923,7 +970,7 @@ export default function WorkloadSummary() {
               ) : pagedTable.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-10 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center space-y-2 bg-primary/5 rounded-xl border border-dashed border-primary/20 p-6 mx-4">
+                    <div className="flex flex-col items-center justify-center space-y-2 bg-primary/5 rounded-2xl border border-dashed border-primary/20 p-6 mx-4">
                       <CheckCircle2 className="w-10 h-10 opacity-30 text-primary" />
                       <span className="font-bold">No workforce members match the criteria.</span>
                     </div>
@@ -952,8 +999,8 @@ export default function WorkloadSummary() {
                         </td>
                         <td className="p-4 whitespace-nowrap">
                           <div className="flex flex-col">
-                            <span className="font-black text-primary text-sm">{row.ActualHours} <span className="text-[10px] opacity-70">ACT</span></span>
-                            <span className="text-[10px] text-muted-foreground">{row.TargetHours} TGT</span>
+                            <span className="font-black text-primary text-sm">{toNumber(row?.ActualHours)} <span className="text-[10px] opacity-70">ACT</span></span>
+                            <span className="text-[10px] text-muted-foreground">{toNumber(row?.TargetHours)} TGT</span>
                           </div>
                         </td>
                         <td className="p-4 text-center">
