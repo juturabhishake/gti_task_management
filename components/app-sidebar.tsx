@@ -144,6 +144,11 @@ const data = {
           url: "/tasks/team_performance",
           icon: IconDashboard,
         },
+        {
+          title: "Workload Performance",
+          url: "/tasks/workload_performance",
+          icon: IconDashboard,
+        },
       ]
     },
     {
