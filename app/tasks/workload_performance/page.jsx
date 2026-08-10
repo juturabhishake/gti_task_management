@@ -414,11 +414,17 @@ function UserTasksSubTable({ userId, date }) {
                         {task.Status || 'To Do'}
                       </span>
                     </td>
-                    <td className="p-3 whitespace-nowrap text-muted-foreground flex items-center gap-1.5">
-                      <Target className="w-3.5 h-3.5 text-primary/60" /> {task.TargetHours}
-                    </td>
-                    <td className="p-3 whitespace-nowrap text-primary flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" /> {task.ActualHours}
+                    <td className="p-3 whitespace-nowrap text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Target className="w-3.5 h-3.5 text-primary/60" />
+                        {task.TargetHours}
+                      </div>
+                    </td>      
+                    <td className="p-3 whitespace-nowrap text-primary">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {task.ActualHours}
+                      </div>
                     </td>
                   </tr>
                 ))
