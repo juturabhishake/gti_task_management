@@ -14,7 +14,8 @@ export default async function handler(req, res) {
   await runMiddleware(req, res, cors);
 
   if (req.method === "GET") {
-    const { action, employeeId, role, sectionIds, teamIds, date, userId } = req.query;
+    // const { action, employeeId, role, sectionIds, teamIds, date, userId } = req.query;
+    const { action, employeeId, teamIds, date, userId } = req.query;
 
     try {
       if (action === 'teams') {
