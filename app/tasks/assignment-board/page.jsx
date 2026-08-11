@@ -9,7 +9,10 @@ import {
 import * as RadixPopover from '@radix-ui/react-popover';
 import SecureLS from 'secure-ls';
 import { cn } from "@/lib/utils";
+import { useAccessCheck } from '@/lib/useAccessCheck';
+import { useAdminAccessCheck } from "@/lib/checkAdmin";
 
+const PAGE_ID_FOR_THIS_FORM = 2045;
 const getSecureLSValue = (key) => {
   if (typeof window !== 'undefined') {
     try {
@@ -229,12 +232,14 @@ function MultiSelectHierarchyPopover({ data = [], selectedValues = [], onSelect,
 }
 
 export default function AssignmentPage() {
+  const { isLoading: isAccessLoading, hasAccess, accessLevel } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
+  const { hasAccess: isAdmin } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const [employeeId, setEmployeeId] = useState('');
   const [role, setRole] = useState('');
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [teamUsers, setTeamUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -480,7 +485,9 @@ export default function AssignmentPage() {
 
   const processedTasks = useMemo(() => {
     let output = [...tasks];
-
+    if (showUnassignedOnly) {
+      output = output.filter(t => !t.AssignedUserId || parseInt(t.AssignedUserId) === 0);
+    }
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       output = output.filter(t => {
@@ -497,7 +504,7 @@ export default function AssignmentPage() {
     });
 
     return applySorting(output);
-  }, [tasks, searchQuery, columnFilters, sorting]);
+  }, [tasks, searchQuery, columnFilters, sorting, showUnassignedOnly]);
 
   const totalPages = Math.ceil(processedTasks.length / pagination.size) || 1;
   const pagedTasks = processedTasks.slice((pagination.page - 1) * pagination.size, pagination.page * pagination.size);
@@ -582,7 +589,8 @@ export default function AssignmentPage() {
     { id: 'Medium', label: 'Medium', hours: selectedTask.MediumHours ?? selectedTask.mediumHours ?? 0, activeColor: 'bg-amber-500/10 border-amber-500 text-amber-600 shadow-md', idleColor: 'border-dashed border-border/60 text-muted-foreground hover:bg-amber-500/5 hover:border-amber-500/40' },
     { id: 'Max', label: 'High', hours: selectedTask.MaxHours ?? selectedTask.maxHours ?? 0, activeColor: 'bg-rose-500/10 border-rose-500 text-rose-600 shadow-md', idleColor: 'border-dashed border-border/60 text-muted-foreground hover:bg-rose-500/5 hover:border-rose-500/40' }
   ] : [];
-
+  const totalTasksCount = tasks.length;
+  const unassignedTasksCount = tasks.filter(t => !t.AssignedUserId || parseInt(t.AssignedUserId) === 0).length;
   return (
     <div className="@container/main h-[100dvh] w-full bg-background text-foreground flex flex-col overflow-hidden font-sans animate-in fade-in duration-500">
       
@@ -624,10 +632,23 @@ export default function AssignmentPage() {
           </div>
         </div>
 
-        <div className="hidden lg:flex items-center gap-2 justify-end shrink-0 text-xs font-bold text-muted-foreground bg-muted/30 px-4 py-3 rounded-xl border border-border/50">
-          <Layers className="w-4 h-4 text-primary" />
-          <span>{processedTasks.length} Pending</span>
-        </div>
+        <button 
+          onClick={() => {
+            setShowUnassignedOnly(!showUnassignedOnly);
+            setPage(1);
+          }}
+          className={cn(
+            "hidden lg:flex items-center gap-2 justify-end shrink-0 text-xs font-bold px-4 py-3 rounded-xl border transition-all cursor-pointer",
+            showUnassignedOnly 
+              ? "bg-primary text-primary-foreground border-primary shadow-md" 
+              : "text-muted-foreground bg-muted/30 border-border/50 hover:bg-muted/50"
+          )}
+        >
+          <Layers className={cn("w-4 h-4", showUnassignedOnly ? "text-primary-foreground" : "text-primary")} />
+          <span>
+            {showUnassignedOnly ? `${unassignedTasksCount} Unassigned` : `${totalTasksCount} Total Tasks`}
+          </span>
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-2 relative">
