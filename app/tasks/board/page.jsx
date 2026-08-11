@@ -111,7 +111,7 @@ function CustomCategorySelector({ data = [], selectedValue, onSelect, placeholde
         </RadixPopover.Trigger>
         <RadixPopover.Portal>
           <RadixPopover.Content 
-            className="z-[9999] bg-card border border-primary/20 rounded-xl shadow-2xl p-3 w-[var(--radix-popover-trigger-width)] max-w-[95vw] md:max-w-2xl" 
+            className="z-[9999] bg-card border border-primary/20 rounded-xl shadow-2xl p-3 w-[var(--radix-popover-trigger-width)] w-[var(--radix-popover-trigger-width)]" 
             sideOffset={5} 
             align="start"
           >
@@ -219,7 +219,7 @@ function PopoverDropdown({ data = [], selectedValue, onSelect, placeholder, disa
         </button>
       </RadixPopover.Trigger>
       <RadixPopover.Portal>
-        <RadixPopover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+        <RadixPopover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
           <input 
             type="text" 
             placeholder="Search..."
@@ -318,7 +318,7 @@ function MultiSelectUserPopover({ data = [], fullOptions = [], selectedValues = 
         </button>
       </RadixPopover.Trigger>
       <RadixPopover.Portal>
-        <RadixPopover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+        <RadixPopover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
           <input 
             type="text" 
             placeholder="Search..."
@@ -539,8 +539,17 @@ export default function SubcategoryTaskView() {
 
           const resVerify = await fetch(`/api/tasks/task-assignments?action=verifyUser&employeeId=${employeeIdVal}&teamId=${taskDetail.TeamId}`);
           const jsonVerify = await resVerify.json();
+          // if (resVerify.ok && jsonVerify.isMapped) {
+          //   setHasEditAccess(true);
+          // } else {
+          //   setHasEditAccess(false);
+          // }
           if (resVerify.ok && jsonVerify.isMapped) {
-            setHasEditAccess(true);
+            if (isMyTask || isUnassignedTask) {
+              setHasEditAccess(true);
+            } else {
+              setHasEditAccess(false);
+            }
           } else {
             setHasEditAccess(false);
           }
@@ -1222,7 +1231,10 @@ export default function SubcategoryTaskView() {
                       </div>
                     ) : (
                       columnTasks.map(task => {
-                        const canDrag = isAdmin || task.IsTeamMember === 1 || task.IsTeamMember === true;
+                        const isMyTask = task.AssignedEmployeeId && String(task.AssignedEmployeeId) === String(employeeId);
+                        const isUnassigned = !task.AssignedUserId;
+                        // const canDrag = isAdmin || task.IsTeamMember === 1 || task.IsTeamMember === true;
+                        const canDrag = isAdmin || isTeamLead || isMyTask || (isUnassigned && (task.IsTeamMember === 1 || task.IsTeamMember === true))
                         const isOverdue = task.DueDate && new Date(task.DueDate) < new Date() && task.StatusName !== 'Resolved';
                         return (
                           <div
