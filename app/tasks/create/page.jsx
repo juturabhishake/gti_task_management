@@ -33,7 +33,7 @@ function CustomCategorySelector({ data = [], selectedValue, onSelect, placeholde
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Content 
-            className="z-[9999] bg-card border border-primary/20 rounded-xl shadow-2xl p-3 w-[var(--radix-popover-trigger-width)] max-w-[95vw] md:max-w-2xl" 
+            className="z-[9999] bg-card border border-primary/20 rounded-xl shadow-2xl p-3 w-[var(--radix-popover-trigger-width)]" 
             sideOffset={5} 
             align="start"
           >
@@ -224,6 +224,15 @@ export default function CreateTaskFormPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Assigned Category Location <span className="text-[10px] font-bold text-red-500">*</span></label>
+            <CustomCategorySelector
+              data={categoryCatalog}
+              selectedValue={formState.categoryId}
+              onSelect={val => setFormState(p => ({ ...p, categoryId: val }))}
+              placeholder="-- Search and Select Target Category --"
+            />
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Task <span className="text-[10px] font-bold text-red-500">*</span></label>
@@ -248,16 +257,6 @@ export default function CreateTaskFormPage() {
                 className="w-full text-xs rounded-xl p-3.5 focus:outline-none bg-background border border-primary/20 text-foreground font-semibold placeholder:text-muted-foreground/60 transition focus:border-primary"
               />
             </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Assigned Category Location <span className="text-[10px] font-bold text-red-500">*</span></label>
-            <CustomCategorySelector
-              data={categoryCatalog}
-              selectedValue={formState.categoryId}
-              onSelect={val => setFormState(p => ({ ...p, categoryId: val }))}
-              placeholder="-- Search and Select Target Category --"
-            />
           </div>
 
           <div className="p-5 bg-primary/5 border border-primary/10 rounded-xl space-y-4">
