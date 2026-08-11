@@ -308,7 +308,7 @@ function MultiSelectUserPopover({ data = [], fullOptions = [], selectedValues = 
   return (
     <RadixPopover.Root open={open} onOpenChange={(val) => { setOpen(val); if (!val) setSearch(''); }}>
       <RadixPopover.Trigger asChild>
-        <button className="w-full sm:w-75 flex items-center justify-between text-xs bg-background border border-primary/20 rounded-lg p-2 text-foreground focus:ring-2 focus:ring-primary focus:outline-none min-h-9 cursor-pointer text-left font-semibold">
+        <button className="w-full sm:w-75 flex items-center justify-between text-xs bg-background border border-primary/20 rounded-lg p-2 text-foreground focus:ring-2 focus:ring-primary focus:outline-none min-h-10 cursor-pointer text-left font-semibold">
           <span className="truncate">
             {selectedValues.length === 0 
               ? placeholder 
@@ -402,6 +402,8 @@ export default function SubcategoryTaskView() {
   const [previousUserIds, setPreviousUserIds] = useState([]);
   const [prevStatusId, setPrevStatusId] = useState(null);
   const [hasSetDefaultUser, setHasSetDefaultUser] = useState(false);
+  const [role, setRole] = useState('');
+  const [selectedSections, setSelectedSections] = useState([]);
   const [teamsList, setTeamsList] = useState([]);
   const [formState, setFormState] = useState({
     name: '',
@@ -431,10 +433,16 @@ export default function SubcategoryTaskView() {
   const scrollContainerRef = React.useRef(null);
   useEffect(() => {
     const empId = getSecureLSValue('employee_id');
+    const userRole = getSecureLSValue('role');
     setEmployeeId(empId || '');
+    setRole(userRole || '');
     fetchCategoryCatalog();
     fetchHierarchyOptions();
   }, []);
+  const isHOD = role === 'HOD';
+  const isHOS = role === 'HOS';
+  const isTeamLead = role === 'Team Leader' || role === 'Team Lead';
+  const isNormal = !isHOD && !isHOS;
   const fetchHierarchyOptions = async () => {
     try {
       const res = await fetch('/api/user-hierarchy?action=options');
@@ -503,7 +511,7 @@ export default function SubcategoryTaskView() {
   useEffect(() => {
     if (taskDetail) {
       const verifyAccess = async () => {
-        if (isAdmin) {
+        if (isAdmin || isTeamLead) {
           setHasEditAccess(true);
           setIsAssignedUser(true);
           return;
@@ -591,7 +599,9 @@ export default function SubcategoryTaskView() {
         const start = formatLocalDate(dateRange.from);
         const end = formatLocalDate(dateRange.to);
         const teamIdsString = selectedTeamsList.join(',');
-        const resData = await fetch(`/api/tasks/task-assignments?action=list&page=1&size=999999&search=${searchTerm}&startDate=${start}&endDate=${end}&teamIds=${teamIdsString}&loggedInEmployeeId=${employeeId || ''}`);
+        // const resData = await fetch(`/api/tasks/task-assignments?action=list&page=1&size=999999&search=${searchTerm}&startDate=${start}&endDate=${end}&teamIds=${teamIdsString}&loggedInEmployeeId=${employeeId || ''}`);
+        const sectionIdsString = selectedSections.join(',');
+        const resData = await fetch(`/api/tasks/task-assignments?action=list&page=1&size=999999&search=${searchTerm}&startDate=${start}&endDate=${end}&role=${role}&sectionIds=${sectionIdsString}&teamIds=${teamIdsString}&loggedInEmployeeId=${employeeId || ''}`);
         const jsonData = await resData.json();
         if (resData.ok && jsonData.data) {
           setDataList(jsonData.data);
@@ -959,6 +969,21 @@ export default function SubcategoryTaskView() {
       setIsAssignedUser(false);
     }
   };
+  const sectionsList = React.useMemo(() => {
+    return hierarchyOptions
+      .filter(opt => String(opt.Type || opt.type || '').toLowerCase() === 'section')
+      .map(s => ({ id: s.Id ?? s.id, name: s.Name ?? s.name, type: 'Section' }));
+  }, [hierarchyOptions]);
+
+  const availableTeamsList = React.useMemo(() => {
+    if (selectedSections.length === 0) {
+      return teamsList.map(t => ({ ...t, type: 'Team' }));
+    }
+    return teamsList.filter(t => {
+      const teamNode = hierarchyOptions.find(o => (o.Id == (t.Id ?? t.id)) && String(o.Type || '').toLowerCase() === 'team');
+      return teamNode && selectedSections.includes(String(teamNode.ParentId ?? teamNode.parentId));
+    }).map(t => ({ ...t, type: 'Team' }));
+  }, [teamsList, hierarchyOptions, selectedSections]);
   return (
     <div className="@container/main min-h-screen bg-background text-foreground flex p-1 flex-col space-y-4 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-primary/10 pb-4 shrink-0">
@@ -981,7 +1006,7 @@ export default function SubcategoryTaskView() {
 
       <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h4 className="font-bold text-foreground text-sm">Board Progress</h4>
             <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">{dataList.length} Tasks</span>
           </div>
@@ -1065,15 +1090,39 @@ export default function SubcategoryTaskView() {
         </div>
 
         <div className="flex flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
-          <div className="flex flex-col gap-1 w-full sm:w-auto">
-            <MultiSelectUserPopover 
+          <div className="flex flex-wrap gap-1 w-full sm:w-auto">
+            {/* <MultiSelectUserPopover 
               data={teamsList}
               fullOptions={hierarchyOptions}
               selectedValues={selectedTeamsList}
               // onSelect={setSelectedTeamsList}
               onSelect={handleTeamSelectionChange}
               placeholder="All Teams"
-            />
+            /> */}
+            {isHOD && (
+            <div className="flex flex-col gap-1 w-full sm:w-auto">
+              <MultiSelectUserPopover 
+                data={sectionsList}
+                fullOptions={hierarchyOptions}
+                selectedValues={selectedSections}
+                onSelect={(vals) => { setSelectedSections(vals); setSelectedTeamsList([]); }}
+                placeholder="All Sections"
+              />
+            </div>
+          )}
+
+          {/* HOD లేదా HOS కి టీమ్స్ ఫిల్టర్ */}
+          {(isHOD || isHOS) && (
+            <div className="flex flex-col gap-1 w-full sm:w-auto">
+              <MultiSelectUserPopover 
+                data={availableTeamsList}
+                fullOptions={hierarchyOptions}
+                selectedValues={selectedTeamsList}
+                onSelect={handleTeamSelectionChange}
+                placeholder="All Teams"
+              />
+            </div>
+          )}
           </div>
           <div className={cn("grid gap-2 w-full sm:w-auto")}>
             <Popover>
@@ -1082,7 +1131,7 @@ export default function SubcategoryTaskView() {
                   id="date"
                   variant={"outline"}
                   className={cn(
-                    "w-full sm:w-[300px] justify-start text-left font-semibold text-xs border-primary/20 bg-background hover:bg-primary/5",
+                    "w-full sm:w-[300px] justify-start text-left font-semibold text-xs h-10 border-primary/20 bg-background hover:bg-primary/5",
                     !dateRange && "text-muted-foreground"
                   )}
                 >

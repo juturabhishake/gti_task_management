@@ -79,6 +79,8 @@ export default async function handler(req, res) {
         const isUnassignedViewVal = parseInt(req.query.isUnassignedView) || 0;
         const escapedLoggedInEmployeeId = (req.query.loggedInEmployeeId || '').replace(/'/g, "''");
         const escapedTeamIds = (req.query.teamIds || '').replace(/'/g, "''");
+        const escapedRole = String(req.query.role || '').replace(/['"]/g, '').trim().toUpperCase().replace(/'/g, "''");
+        const escapedSectionIds = (req.query.sectionIds || '').replace(/'/g, "''");
         const results = await prisma.$queryRawUnsafe(
           `EXEC dbo.SP_Get_Task_Assignments_Paged 
             @PageNumber = ${parsedPage}, 
@@ -89,7 +91,9 @@ export default async function handler(req, res) {
             @EndDate = ${escapedEndDate},
             @IsUnassignedView = ${isUnassignedViewVal},
             @TeamIds = '${escapedTeamIds}',
-            @LoggedInEmployeeId = '${escapedLoggedInEmployeeId}'`
+            @LoggedInEmployeeId = '${escapedLoggedInEmployeeId}',
+            @Role = '${escapedRole}',
+            @SectionIds = '${escapedSectionIds}'`
         );
         return res.status(200).json({ data: results });
       } else if (action === 'single') {
