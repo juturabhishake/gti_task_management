@@ -388,13 +388,21 @@ export default function AssignmentPage() {
       };
 
       fetchUsers();
+      // setFormState({
+      //   assignedUserId: '',
+      //   severity: '',
+      //   project: selectedTask.Project || selectedTask.project || '',
+      //   workDate: '',
+      //   dueDate: '',
+      //   taskDetails: ''
+      // });
       setFormState({
-        assignedUserId: '',
-        severity: '',
+        assignedUserId: selectedTask.AssignedUserId || '',
+        severity: selectedTask.Severity || '',
         project: selectedTask.Project || selectedTask.project || '',
-        workDate: '',
-        dueDate: '',
-        taskDetails: ''
+        workDate: selectedTask.WorkDate ? selectedTask.WorkDate.split('T')[0] : '',
+        dueDate: selectedTask.DueDate ? selectedTask.DueDate.split('T')[0] : '',
+        taskDetails: selectedTask.TaskDetails || ''
       });
       setFeedback(null);
     } else {
@@ -576,9 +584,9 @@ export default function AssignmentPage() {
   ] : [];
 
   return (
-    <div className="@container/main h-[100dvh] w-full bg-background text-foreground flex flex-col p-1 overflow-hidden font-sans animate-in fade-in duration-500">
+    <div className="@container/main h-[100dvh] w-full bg-background text-foreground flex flex-col overflow-hidden font-sans animate-in fade-in duration-500">
       
-      <div className="shrink-0 mb-3 flex flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full bg-card border border-border/80 rounded-xl p-4 shadow-sm z-10">
+      <div className="shrink-0 mb-2 flex flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full bg-card border border-border/80 rounded-xl p-4 shadow-sm z-10">
         <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full lg:w-auto shrink-0 flex-1">
           <div className="flex items-center gap-3 shrink-0 mr-2">
             <UserPlus hidden={!isDesktop} className="w-6 h-6 md:w-8 md:h-8 text-primary" />
@@ -622,7 +630,7 @@ export default function AssignmentPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-3 relative">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 gap-2 relative">
         
         <div className="flex flex-col flex-1 min-h-0 shrink-0 bg-card border border-border/80 rounded-xl shadow-sm overflow-hidden z-0">
           <div className="flex-1 overflow-auto relative scrollbar-thin">
