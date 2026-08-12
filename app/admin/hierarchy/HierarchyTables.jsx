@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, ChevronDown, CheckSquare, ArrowUp, ArrowDown, ArrowUpDown, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, ChevronDown, CheckSquare, ArrowUp, ArrowDown, ArrowUpDown, Search, Trash2, Check, X, AlertCircle } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
 
 export default function HierarchyTables({ 
@@ -10,7 +10,9 @@ export default function HierarchyTables({
   teams = [], 
   activeTabs = [], 
   pagination, 
-  onPaginationChange 
+  onPaginationChange,
+  isAdmin,
+  onRefresh
 }) {
   const [columnFilters, setColumnFilters] = useState({
     group: { name: [] },
@@ -32,6 +34,10 @@ export default function HierarchyTables({
     section: '',
     team: ''
   });
+
+  const [editingCell, setEditingCell] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const handleSortCycle = (tableKey, column) => {
     setSorting(prev => {
@@ -112,6 +118,56 @@ export default function HierarchyTables({
     return <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0 ml-1" />;
   };
 
+  const handleDoubleClick = (table, id, currentValue) => {
+    if (isAdmin) {
+      setEditingCell({ table, id, value: currentValue });
+    }
+  };
+
+  const handleUpdate = async (type, id, newName) => {
+    if (!newName.trim()) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/hierarchy/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'UPDATE', type, id, name: newName })
+      });
+      if (res.ok) {
+        setEditingCell(null);
+        if (onRefresh) onRefresh();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const confirmDelete = (type, id, name) => {
+    setDeleteTarget({ type, id, name });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/hierarchy/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'DELETE', type: deleteTarget.type, id: deleteTarget.id })
+      });
+      if (res.ok) {
+        setDeleteTarget(null);
+        if (onRefresh) onRefresh();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8 w-full">
       {activeTabs.includes('groups') && (
@@ -148,21 +204,56 @@ export default function HierarchyTables({
                   </div>
                 </th>
                 <th className="p-3 whitespace-nowrap">Departments Count</th>
+                {isAdmin && <th className="w-12 p-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/10">
               {applyFilters(groups, 'group', { name: 'Name' }).length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
+                  <td colSpan={isAdmin ? 4 : 3} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
                 </tr>
               ) : (
                 applyFilters(groups, 'group', { name: 'Name' }).map((g, idx) => (
                   <tr key={idx} className="hover:bg-primary/5 text-muted-foreground hover:text-foreground transition text-xs">
                     <td className="p-3 font-medium whitespace-nowrap">{g.Id}</td>
-                    <td className="p-3 font-medium text-foreground whitespace-nowrap">{g.Name}</td>
+                    <td className="p-3 font-medium text-foreground whitespace-nowrap">
+                      {editingCell?.table === 'group' && editingCell?.id === g.Id ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingCell.value}
+                            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+                            className="border border-primary/40 bg-background rounded px-2 py-1 text-xs focus:outline-none"
+                            disabled={actionLoading}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdate('Group', g.Id, editingCell.value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                          />
+                          <button disabled={actionLoading} onClick={() => handleUpdate('Group', g.Id, editingCell.value)} className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button disabled={actionLoading} onClick={() => setEditingCell(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span onDoubleClick={() => handleDoubleClick('group', g.Id, g.Name)} className={isAdmin ? "cursor-text" : ""}>
+                          {g.Name}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-3 whitespace-nowrap">
                       <span className="bg-primary/10 text-primary font-semibold text-xs px-2.5 py-1 rounded-md">{g.DeptCount || 0} Departments</span>
                     </td>
+                    {isAdmin && (
+                      <td className="p-3 whitespace-nowrap text-right">
+                        <button onClick={() => confirmDelete('Group', g.Id, g.Name)} className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -219,22 +310,57 @@ export default function HierarchyTables({
                   </div>
                 </th>
                 <th className="p-3 whitespace-nowrap">Sections Count</th>
+                {isAdmin && <th className="w-12 p-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/10">
               {applyFilters(depts, 'dept', { name: 'Name', groupName: 'GroupName' }).length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
+                  <td colSpan={isAdmin ? 5 : 4} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
                 </tr>
               ) : (
                 applyFilters(depts, 'dept', { name: 'Name', groupName: 'GroupName' }).map((d, idx) => (
                   <tr key={idx} className="hover:bg-primary/5 text-muted-foreground hover:text-foreground transition text-xs">
                     <td className="p-3 font-medium whitespace-nowrap">{d.Id}</td>
-                    <td className="p-3 font-medium text-foreground whitespace-nowrap">{d.Name}</td>
+                    <td className="p-3 font-medium text-foreground whitespace-nowrap">
+                      {editingCell?.table === 'dept' && editingCell?.id === d.Id ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingCell.value}
+                            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+                            className="border border-primary/40 bg-background rounded px-2 py-1 text-xs focus:outline-none"
+                            disabled={actionLoading}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdate('Department', d.Id, editingCell.value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                          />
+                          <button disabled={actionLoading} onClick={() => handleUpdate('Department', d.Id, editingCell.value)} className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button disabled={actionLoading} onClick={() => setEditingCell(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span onDoubleClick={() => handleDoubleClick('dept', d.Id, d.Name)} className={isAdmin ? "cursor-text" : ""}>
+                          {d.Name}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-3 whitespace-nowrap">{d.GroupName}</td>
                     <td className="p-3 whitespace-nowrap">
                       <span className="bg-primary/10 text-primary font-semibold text-xs px-2.5 py-1 rounded-md">{d.SectionCount || 0} Sections</span>
                     </td>
+                    {isAdmin && (
+                      <td className="p-3 whitespace-nowrap text-right">
+                        <button onClick={() => confirmDelete('Department', d.Id, d.Name)} className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -291,22 +417,57 @@ export default function HierarchyTables({
                   </div>
                 </th>
                 <th className="p-3 whitespace-nowrap">Teams Count</th>
+                {isAdmin && <th className="w-12 p-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/10">
               {applyFilters(sections, 'section', { name: 'Name', deptName: 'DeptName' }).length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
+                  <td colSpan={isAdmin ? 5 : 4} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
                 </tr>
               ) : (
                 applyFilters(sections, 'section', { name: 'Name', deptName: 'DeptName' }).map((s, idx) => (
                   <tr key={idx} className="hover:bg-primary/5 text-muted-foreground hover:text-foreground transition text-xs">
                     <td className="p-3 font-medium whitespace-nowrap">{s.Id}</td>
-                    <td className="p-3 font-medium text-foreground whitespace-nowrap">{s.Name}</td>
+                    <td className="p-3 font-medium text-foreground whitespace-nowrap">
+                      {editingCell?.table === 'section' && editingCell?.id === s.Id ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingCell.value}
+                            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+                            className="border border-primary/40 bg-background rounded px-2 py-1 text-xs focus:outline-none"
+                            disabled={actionLoading}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdate('Section', s.Id, editingCell.value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                          />
+                          <button disabled={actionLoading} onClick={() => handleUpdate('Section', s.Id, editingCell.value)} className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button disabled={actionLoading} onClick={() => setEditingCell(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span onDoubleClick={() => handleDoubleClick('section', s.Id, s.Name)} className={isAdmin ? "cursor-text" : ""}>
+                          {s.Name}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-3 whitespace-nowrap">{s.DeptName}</td>
                     <td className="p-3 whitespace-nowrap">
                       <span className="bg-primary/10 text-primary font-semibold text-xs px-2.5 py-1 rounded-md">{s.TeamCount || 0} Teams</span>
                     </td>
+                    {isAdmin && (
+                      <td className="p-3 whitespace-nowrap text-right">
+                        <button onClick={() => confirmDelete('Section', s.Id, s.Name)} className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -362,25 +523,83 @@ export default function HierarchyTables({
                     />
                   </div>
                 </th>
+                {isAdmin && <th className="w-12 p-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/10">
               {applyFilters(teams, 'team', { name: 'Name', sectionName: 'SectionName' }).length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
+                  <td colSpan={isAdmin ? 4 : 3} className="p-4 text-center text-xs text-muted-foreground whitespace-nowrap">No records</td>
                 </tr>
               ) : (
                 applyFilters(teams, 'team', { name: 'Name', sectionName: 'SectionName' }).map((t, idx) => (
                   <tr key={idx} className="hover:bg-primary/5 text-muted-foreground hover:text-foreground transition text-xs">
                     <td className="p-3 font-medium whitespace-nowrap">{t.Id}</td>
-                    <td className="p-3 font-medium text-foreground whitespace-nowrap">{t.Name}</td>
+                    <td className="p-3 font-medium text-foreground whitespace-nowrap">
+                      {editingCell?.table === 'team' && editingCell?.id === t.Id ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingCell.value}
+                            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+                            className="border border-primary/40 bg-background rounded px-2 py-1 text-xs focus:outline-none"
+                            disabled={actionLoading}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdate('Team', t.Id, editingCell.value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                          />
+                          <button disabled={actionLoading} onClick={() => handleUpdate('Team', t.Id, editingCell.value)} className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button disabled={actionLoading} onClick={() => setEditingCell(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span onDoubleClick={() => handleDoubleClick('team', t.Id, t.Name)} className={isAdmin ? "cursor-text" : ""}>
+                          {t.Name}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-3 whitespace-nowrap">{t.SectionName}</td>
+                    {isAdmin && (
+                      <td className="p-3 whitespace-nowrap text-right">
+                        <button onClick={() => confirmDelete('Team', t.Id, t.Name)} className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </TableWithPagination>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm bg-black/40">
+          <div className="bg-card rounded-2xl p-6 shadow-2xl border border-primary/50 w-full max-w-sm">
+            <h3 className="text-lg font-black text-red-500 mb-2 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" /> Confirm Deletion
+            </h3>
+            <p className="text-sm text-foreground font-medium mb-4">
+              Are you sure you want to delete this {deleteTarget.type}? This action cannot be undone.
+            </p>
+            <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 mb-6">
+              <p className="text-xs text-muted-foreground">ID: <span className="font-bold text-foreground">{deleteTarget.id}</span></p>
+              <p className="text-xs text-muted-foreground">Name: <span className="font-bold text-foreground">{deleteTarget.name}</span></p>
+            </div>
+            <div className="flex gap-3">
+              <button disabled={actionLoading} onClick={() => setDeleteTarget(null)} className="flex-1 py-2 text-xs font-bold rounded-xl border border-primary/20 hover:bg-primary/5 text-foreground transition disabled:opacity-50">Cancel</button>
+              <button disabled={actionLoading} onClick={handleDelete} className="flex-1 py-2 text-xs font-bold rounded-xl bg-red-500 hover:bg-red-600 text-white transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50">
+                {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

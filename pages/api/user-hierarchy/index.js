@@ -81,8 +81,22 @@ export default async function handler(req, res) {
     try {
       if (action === 'list') {
         const escapedSearch = search.replace(/'/g, "''");
+        const escapedRole = String(req.query.role || '').replace(/['"]/g, '').trim().toUpperCase().replace(/'/g, "''");
+        const escapedSectionIds = (req.query.sectionIds || '').replace(/'/g, "''");
+        const escapedTeamIds = (req.query.teamIds || '').replace(/'/g, "''");
+        const escapedLoggedInEmployeeId = (req.query.loggedInEmployeeId || '').replace(/'/g, "''");
+        // const results = await prisma.$queryRawUnsafe(
+        //   `EXEC dbo.SP_Get_User_Hierarchy_Paged @PageNumber=${parseInt(page)}, @PageSize=${parseInt(size)}, @SearchTerm=N'${escapedSearch}'`
+        // );
         const results = await prisma.$queryRawUnsafe(
-          `EXEC dbo.SP_Get_User_Hierarchy_Paged @PageNumber=${parseInt(page)}, @PageSize=${parseInt(size)}, @SearchTerm=N'${escapedSearch}'`
+          `EXEC dbo.SP_Get_User_Hierarchy_Paged 
+            @PageNumber=${parseInt(page)}, 
+            @PageSize=${parseInt(size)}, 
+            @SearchTerm=N'${escapedSearch}',
+            @Role='${escapedRole}',
+            @SectionIds='${escapedSectionIds}',
+            @TeamIds='${escapedTeamIds}',
+            @LoggedInEmployeeId='${escapedLoggedInEmployeeId}'`
         );
         return res.status(200).json({ data: results });
       } else if (action === 'options') {

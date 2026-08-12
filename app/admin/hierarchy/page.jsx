@@ -375,6 +375,8 @@ export default function HierarchyPage() {
             activeTabs={activeTableTabs}
             pagination={pagination}
             onPaginationChange={handlePaginationChange}
+            isAdmin={hasAccess}
+            onRefresh={fetchTreeAndTables}
           />
         )}
       </div>
