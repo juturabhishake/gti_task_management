@@ -62,14 +62,21 @@ export default async function handler(req, res) {
     const parsedPage = parseInt(page) || 1;
     const parsedSize = parseInt(size) || 100;
     const escapedSearch = search.replace(/'/g, "''");
-
+    const escapedRole = String(req.query.role || '').replace(/['"]/g, '').trim().toUpperCase().replace(/'/g, "''");
+    const escapedSectionIds = (req.query.sectionIds || '').replace(/'/g, "''");
+    const escapedTeamIds = (req.query.teamIds || '').replace(/'/g, "''");
+    const escapedLoggedInEmployeeId = (req.query.loggedInEmployeeId || '').replace(/'/g, "''");
     try {
       if (type === "Category") {
         const results = await prisma.$queryRawUnsafe(
           `EXEC dbo.SP_Get_Categories_Paged 
             @PageNumber = ${parsedPage}, 
             @PageSize = ${parsedSize}, 
-            @SearchTerm = N'${escapedSearch}'`
+            @SearchTerm = N'${escapedSearch}',
+            @Role = '${escapedRole}',
+            @SectionIds = '${escapedSectionIds}',
+            @TeamIds = '${escapedTeamIds}',
+            @LoggedInEmployeeId = '${escapedLoggedInEmployeeId}'`
         );
         return res.status(200).json({ data: results });
       } else if (type === "Subcategory") {
@@ -77,7 +84,11 @@ export default async function handler(req, res) {
           `EXEC dbo.SP_Get_Subcategories_Paged 
             @PageNumber = ${parsedPage}, 
             @PageSize = ${parsedSize}, 
-            @SearchTerm = N'${escapedSearch}'`
+            @SearchTerm = N'${escapedSearch}',
+            @Role = '${escapedRole}',
+            @SectionIds = '${escapedSectionIds}',
+            @TeamIds = '${escapedTeamIds}',
+            @LoggedInEmployeeId = '${escapedLoggedInEmployeeId}'`
         );
         return res.status(200).json({ data: results });
       } else if (type === "CategoryCatalog") {

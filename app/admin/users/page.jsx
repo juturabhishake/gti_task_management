@@ -104,7 +104,7 @@ function ComboboxPopover({ data = [], fullOptions = [], selectedValue, onSelect,
           </button>
         </Popover.Trigger>
         <Popover.Portal>
-          <Popover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+          <Popover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
             <input 
               type="text" 
               placeholder="Search..."
@@ -194,7 +194,7 @@ function UserSelectorPopover({ data = [], selectedValue, onSelect, placeholder }
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+        <Popover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
           <input 
             type="text" 
             placeholder="Search Employee..."
@@ -254,7 +254,7 @@ function ShiftSelectorPopover({ data = [], selectedValue, onSelect, placeholder 
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+        <Popover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
           <input 
             type="text" 
             placeholder="Search Shift..."
@@ -303,7 +303,7 @@ function FilterPopover({ options = [], selected = [], onChange, onClear }) {
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content className="z-50 w-56 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+        <Popover.Content className="z-50 w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
           <input 
             type="text" 
             placeholder="Search filters..."
@@ -558,6 +558,9 @@ export default function UserHierarchyPage() {
 
   const handleOpenAddModal = () => {
     setFeedback(null);
+    const defaultTeamId = allowedTeamsForModal.length > 0 
+      ? (allowedTeamsForModal[0].Id ?? allowedTeamsForModal[0].id) 
+      : '';
     setFormState({ userId: '', teamId: '', shiftId: '', designation: '' });
     setIsEditing(false);
     setIsModalOpen(true);
@@ -741,7 +744,20 @@ export default function UserHierarchyPage() {
       return teamNode && selectedSections.includes(String(teamNode.ParentId ?? teamNode.parentId));
     }).map(t => ({ ...t, type: 'Team' }));
   }, [teamsList, hierarchyOptions, selectedSections]);
+  const allowedTeamsForModal = React.useMemo(() => {
+    if (isHOD) return filteredTeams;
 
+    if (isHOS) {
+      const validSections = dataList.map(d => String(d.SectionName).toLowerCase());
+      return filteredTeams.filter(t => {
+        const ancestors = getTeamAncestors(t.Id ?? t.id, hierarchyOptions);
+        const sectionNode = hierarchyOptions.find(o => (o.Id ?? o.id) === ancestors.SectionId && String(o.Type || o.type).toLowerCase() === 'section');
+        return sectionNode && validSections.includes(String(sectionNode.Name || sectionNode.name).toLowerCase());
+      });
+    }
+    const validTeamIds = dataList.map(d => d.TeamId);
+    return filteredTeams.filter(t => validTeamIds.includes(t.Id ?? t.id));
+  }, [filteredTeams, dataList, isHOD, isHOS, hierarchyOptions]);
   const handleTeamSelectionChange = (newTeams) => {
     setSelectedTeamsList(newTeams);
   };
@@ -768,7 +784,7 @@ export default function UserHierarchyPage() {
 
       <div className="bg-card border border-primary/20 rounded-xl overflow-hidden flex flex-col h-[calc(100vh-160px)] w-full">
         <div className="p-4 bg-primary/5 border-b border-primary/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h4 className="font-bold text-foreground text-sm">Mappings Grid</h4>
             <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 rounded-full">{totalCount} Total</span>
           </div>
@@ -801,9 +817,9 @@ export default function UserHierarchyPage() {
                 placeholder="Search mappings..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full text-xs bg-background border border-primary/20 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                className="w-full text-xs bg-background border border-primary/20 rounded-lg pl-8 pr-2.5 py-1.5 h-9 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
               />
-              <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2 w-3.5 h-5 text-muted-foreground" />
             </div>
           </div>
         </div>
@@ -1080,7 +1096,7 @@ export default function UserHierarchyPage() {
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-primary">Assigned Team</label>
                 <ComboboxPopover 
-                  data={filteredTeams}
+                  data={allowedTeamsForModal}
                   fullOptions={options}
                   selectedValue={formState.teamId}
                   onSelect={val => setFormState(prev => ({ ...prev, teamId: val }))}

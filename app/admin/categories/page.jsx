@@ -6,6 +6,8 @@ import {
   ChevronDown, CheckSquare, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, AlertCircle, Loader2
 } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
+import * as RadixPopover from '@radix-ui/react-popover';
+import SecureLS from 'secure-ls';
 import { useAccessCheck } from '@/lib/useAccessCheck';
 import { useAdminAccessCheck } from "@/lib/checkAdmin";
 
@@ -47,7 +49,29 @@ const getHierarchyPathParts = (item, allOptions) => {
   
   return pathNames.reverse();
 };
-
+const getTeamAncestors = (teamId, allOptions) => {
+  const ancestors = { GroupId: 0, DeptId: 0, SectionId: 0 };
+  let current = allOptions.find(o => (o.Id ?? o.id) === teamId && (o.Type ?? o.type).toLowerCase() === 'team');
+  
+  while (current) {
+    const type = (current.Type ?? current.type).toLowerCase();
+    const parentId = current.ParentId ?? current.parentId;
+    
+    if (type === 'section') ancestors.SectionId = current.Id ?? current.id;
+    else if (type === 'department') ancestors.DeptId = current.Id ?? current.id;
+    else if (type === 'group') ancestors.GroupId = current.Id ?? current.id;
+    
+    if (!parentId) break;
+    
+    let parentType = "";
+    if (type === "team") parentType = "section";
+    else if (type === "section") parentType = "department";
+    else if (type === "department") parentType = "group";
+    
+    current = allOptions.find(o => (o.Id ?? o.id) === parentId && (o.Type ?? o.type).toLowerCase() === parentType);
+  }
+  return ancestors;
+};
 function ComboboxPopover({ data = [], fullOptions = [], selectedValue, onSelect, placeholder }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -75,7 +99,7 @@ function ComboboxPopover({ data = [], fullOptions = [], selectedValue, onSelect,
           </button>
         </Popover.Trigger>
         <Popover.Portal>
-          <Popover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+          <Popover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
             <input 
               type="text" 
               placeholder="Search..."
@@ -166,7 +190,7 @@ function CustomSelectorPopover({ data = [], selectedValue, onSelect, placeholder
           </button>
         </Popover.Trigger>
         <Popover.Portal>
-          <Popover.Content className="z-[9999] w-64 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+          <Popover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
             <input 
               type="text" 
               placeholder="Search by category, team, section..."
@@ -234,7 +258,7 @@ function FilterPopover({ options = [], selected = [], onChange, onClear }) {
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content className="z-50 w-56 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+        <Popover.Content className="z-50 w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
           <input 
             type="text" 
             placeholder="Search filters..."
@@ -277,14 +301,95 @@ function FilterPopover({ options = [], selected = [], onChange, onClear }) {
     </Popover.Root>
   );
 }
+function MultiSelectUserPopover({ data = [], fullOptions = [], selectedValues = [], onSelect, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const filtered = data.filter(item => {
+    const main = item.name || '';
+    return main.toLowerCase().includes(search.toLowerCase());
+  });
 
+  return (
+    <RadixPopover.Root open={open} onOpenChange={(val) => { setOpen(val); if (!val) setSearch(''); }}>
+      <RadixPopover.Trigger asChild>
+        <button className="w-full sm:w-56 flex items-center justify-between text-xs bg-background border border-primary/20 rounded-lg p-2 text-foreground focus:ring-2 focus:ring-primary focus:outline-none min-h-9 cursor-pointer text-left font-semibold">
+          <span className="truncate">
+            {selectedValues.length === 0 
+              ? placeholder 
+              : `${selectedValues.length} Selected`}
+          </span>
+          <ChevronDown className="w-4 h-4 ml-2 shrink-0 opacity-60 text-primary" />
+        </button>
+      </RadixPopover.Trigger>
+      <RadixPopover.Portal>
+        <RadixPopover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+          <input 
+            type="text" 
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full text-xs bg-background border border-primary/20 rounded-lg p-1.5 mb-2 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+          />
+          <div className="max-h-40 overflow-y-auto space-y-1">
+            <button
+              type="button"
+              onClick={() => onSelect([])}
+              className="w-full text-left rounded-md px-2.5 py-1.5 text-xs text-primary font-bold hover:bg-primary/5 cursor-pointer"
+            >
+              Clear All Selection
+            </button>
+            {filtered.map((item, idx) => {
+              const isSelected = selectedValues.includes(String(item.id));
+              const itemForPath = { Id: Number(item.id), Type: item.type || 'Team' };
+              const pathParts = getHierarchyPathParts(itemForPath, fullOptions);
+
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    const next = isSelected 
+                      ? selectedValues.filter(v => v !== String(item.id))
+                      : [...selectedValues, String(item.id)];
+                    onSelect(next);
+                  }}
+                  className={`w-full text-left rounded-md px-2.5 py-1.5 flex items-center justify-between transition text-xs cursor-pointer ${isSelected ? 'bg-primary/20 text-foreground font-semibold' : 'hover:bg-primary/5 text-muted-foreground hover:text-foreground'}`}
+                >
+                  <div className="flex flex-col text-left py-0.5 max-w-[85%]">
+                    <span className="font-bold text-xs truncate">{item.name}</span>
+                    {pathParts.length > 1 && (
+                      <div className="text-[9px] text-muted-foreground mt-0.5 whitespace-normal opacity-85 leading-tight">
+                        {pathParts.slice(0, -1).map((part, pIdx) => (
+                          <span key={pIdx} className="inline-block whitespace-nowrap">
+                            {pIdx > 0 && " ➔ "}
+                            {part}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {isSelected && <CheckSquare className="w-3.5 h-3.5 text-primary shrink-0 ml-1" />}
+                </button>
+              );
+            })}
+          </div>
+        </RadixPopover.Content>
+      </RadixPopover.Portal>
+    </RadixPopover.Root>
+  );
+}
 export default function CategoriesSubcategoriesPage() {
   const { isLoading: isAccessLoading, hasAccess, accessLevel } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const { hasAccess: isAdmin } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const canModify = isAdmin;
   const level = Number(accessLevel || 0);
   const canCreate = level > 1;
-
+  const [employeeId, setEmployeeId] = useState('');
+  const [role, setRole] = useState('');
+  const [selectedSections, setSelectedSections] = useState([]);
+  const [selectedTeamsList, setSelectedTeamsList] = useState([]);
+  const [teamsList, setTeamsList] = useState([]);
   const [activeTab, setActiveTab] = useState('categories');
   const [categoriesList, setCategoriesList] = useState([]);
   const [subcategoriesList, setSubcategoriesList] = useState([]);
@@ -338,11 +443,30 @@ export default function CategoriesSubcategoriesPage() {
   });
 
   const [sorting, setSorting] = useState({ column: null, direction: 'none' });
-
   useEffect(() => {
-    fetchData();
-  }, [activeTab, pagination.page, pagination.size, searchTerm]);
-
+    const ls = new SecureLS({ encodingType: "aes" });
+    setEmployeeId(ls.get('employee_id') || '');
+    setRole(ls.get('role') || '');
+    fetchOptions();
+    fetchCategoryCatalog();
+    fetchTeams();
+  }, []);
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch('/api/tasks/team-performance?action=teams');
+      const json = await res.json();
+      if (res.ok && json.data) setTeamsList(json.data);
+    } catch (e) {}
+  };
+  const safeRole = String(role || '').toUpperCase();
+  const isHOD = safeRole === 'HOD';
+  const isHOS = safeRole === 'HOS';
+  // useEffect(() => {
+  //   fetchData();
+  // }, [activeTab, pagination.page, pagination.size, searchTerm]);
+  useEffect(() => {
+    if(employeeId) fetchData();
+  }, [activeTab, pagination.page, pagination.size, searchTerm, role, employeeId, selectedSections, selectedTeamsList]);
   useEffect(() => {
     fetchOptions();
     fetchCategoryCatalog();
@@ -351,7 +475,10 @@ export default function CategoriesSubcategoriesPage() {
   const fetchData = async () => {
     try {
       const typeParam = activeTab === 'categories' ? 'Category' : 'Subcategory';
-      const res = await fetch(`/api/category-subcategory-update?type=${typeParam}&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}`);
+      const sectionIdsStr = selectedSections.join(',');
+      const teamIdsStr = selectedTeamsList.join(',');
+      const res = await fetch(`/api/category-subcategory-update?type=${typeParam}&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&role=${safeRole}&sectionIds=${sectionIdsStr}&teamIds=${teamIdsStr}&loggedInEmployeeId=${employeeId}`);
+      // const res = await fetch(`/api/category-subcategory-update?type=${typeParam}&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}`);
       const json = await res.json();
       if (res.ok && json.data) {
         if (activeTab === 'categories') {
@@ -392,6 +519,7 @@ export default function CategoriesSubcategoriesPage() {
 
   const handleOpenAddModal = () => {
     setFeedback(null);
+    const defaultTeamId = allowedTeamsForModal.length > 0 ? (allowedTeamsForModal[0].Id ?? allowedTeamsForModal[0].id) : '';
     // setFormState({ name: '', teamId: '', categoryId: '', hours: '' });
     setFormState({ name: '', teamId: '', categoryId: '', hours: '', project: '', maxHours: '', mediumHours: '', minHours: '' });
     setIsEditing(false);
@@ -661,7 +789,34 @@ export default function CategoriesSubcategoriesPage() {
   };
 
   const filteredTeams = options.filter(o => o.Type === 'Team' || o.type === 'Team');
+  const sectionsList = React.useMemo(() => {
+    return options.filter(opt => String(opt.Type || opt.type || '').toLowerCase() === 'section')
+      .map(s => ({ id: s.Id ?? s.id, name: s.Name ?? s.name, type: 'Section' }));
+  }, [options]);
 
+  const availableTeamsList = React.useMemo(() => {
+    if (selectedSections.length === 0) return teamsList.map(t => ({ ...t, type: 'Team' }));
+    return teamsList.filter(t => {
+      const teamNode = options.find(o => (o.Id == (t.Id ?? t.id)) && String(o.Type || '').toLowerCase() === 'team');
+      return teamNode && selectedSections.includes(String(teamNode.ParentId ?? teamNode.parentId));
+    }).map(t => ({ ...t, type: 'Team' }));
+  }, [teamsList, options, selectedSections]);
+
+  const allowedTeamsForModal = React.useMemo(() => {
+    if (isHOD) return filteredTeams;
+    if (isHOS) {
+      const targetList = activeTab === 'categories' ? categoriesList : subcategoriesList;
+      const validSections = targetList.map(d => String(d.SectionName).toLowerCase());
+      return filteredTeams.filter(t => {
+        const ancestors = getTeamAncestors(t.Id ?? t.id, options);
+        const sectionNode = options.find(o => (o.Id ?? o.id) === ancestors.SectionId && String(o.Type || o.type).toLowerCase() === 'section');
+        return sectionNode && validSections.includes(String(sectionNode.Name || sectionNode.name).toLowerCase());
+      });
+    }
+    const targetList = activeTab === 'categories' ? categoriesList : subcategoriesList;
+    const validTeamIds = targetList.map(d => d.TeamId);
+    return filteredTeams.filter(t => validTeamIds.includes(t.Id ?? t.id));
+  }, [filteredTeams, categoriesList, subcategoriesList, activeTab, isHOD, isHOS, options]);
   return (
     <div className="@container/main min-h-screen bg-background text-foreground flex p-1 flex-col space-y-4 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-primary/10 pb-4 shrink-0">
@@ -700,21 +855,45 @@ export default function CategoriesSubcategoriesPage() {
 
       <div className="bg-card border border-primary/20 rounded-xl overflow-hidden flex flex-col h-[calc(100vh-210px)] w-full">
         <div className="p-4 bg-primary/5 border-b border-primary/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h4 className="font-bold text-foreground text-sm">
               {activeTab === 'categories' ? 'Categories List' : 'Subcategories List'}
             </h4>
             <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 rounded-full">{totalCount} Total</span>
           </div>
-          <div className="relative w-full sm:w-64">
-            <input 
-              type="text" 
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full text-xs bg-background border border-primary/20 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
-            />
-            <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {isHOD && (
+              <div className="flex flex-col gap-1 w-full sm:w-auto mr-3">
+                <MultiSelectUserPopover 
+                  data={sectionsList}
+                  fullOptions={options}
+                  selectedValues={selectedSections}
+                  onSelect={(vals) => { setSelectedSections(vals); setSelectedTeamsList([]); }}
+                  placeholder="All Sections"
+                />
+              </div>
+            )}
+            {(isHOD || isHOS) && (
+              <div className="flex flex-col gap-1 w-full sm:w-auto mr-3">
+                <MultiSelectUserPopover 
+                  data={availableTeamsList}
+                  fullOptions={options}
+                  selectedValues={selectedTeamsList}
+                  onSelect={setSelectedTeamsList}
+                  placeholder="All Teams"
+                />
+              </div>
+            )}
+            <div className="relative w-full sm:w-64">
+              <input 
+                type="text" 
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full text-xs bg-background border border-primary/20 rounded-lg pl-8 pr-2.5 py-1.5 h-9 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+              />
+              <Search className="absolute left-2.5 top-2 w-3.5 h-5 text-muted-foreground" />
+          </div>
           </div>
         </div>
 

@@ -437,7 +437,7 @@ export default function SubcategoryTaskView() {
 
       <div className="bg-card border border-primary/20 rounded-xl overflow-hidden flex flex-col h-[calc(100vh-160px)] w-full">
         <div className="p-4 bg-primary/5 border-b border-primary/10 flex flex-wrap justify-between items-start sm:items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2 font-semibold">
+          <div className="flex flex-wrap items-center gap-2 font-semibold">
             <h4 className="font-bold text-foreground text-sm">Tasks Assigned</h4>
             <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 rounded-full">{totalCount} Total</span>
           </div>
