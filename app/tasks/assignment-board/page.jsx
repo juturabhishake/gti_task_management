@@ -41,7 +41,7 @@ function FilterPopover({ options = [], selected = [], onChange, onClear }) {
         </button>
       </RadixPopover.Trigger>
       <RadixPopover.Portal>
-        <RadixPopover.Content className="z-[9999] w-56 bg-card border border-border/80 rounded-xl shadow-xl p-2 animate-in fade-in-80 zoom-in-95 duration-150" sideOffset={5} align="start">
+        <RadixPopover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-border/80 rounded-xl shadow-xl p-2 animate-in fade-in-80 zoom-in-95 duration-150" sideOffset={5} align="start">
           <input 
             type="text" 
             placeholder="Search..."

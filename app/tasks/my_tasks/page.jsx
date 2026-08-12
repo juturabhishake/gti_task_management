@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo  } from 'react';
 import { 
   Search, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Filter, Loader2,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare, Calendar as CalendarIcon
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare, Calendar as CalendarIcon, ChevronDown
 } from 'lucide-react';
 import EditForm from '../all/editform';
 import SecureLS from 'secure-ls';
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as RadixPopover from '@radix-ui/react-popover';
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ function FilterPopover({ options = [], selected = [], onChange, onClear }) {
           <Filter className={`w-3.5 h-3.5 ${selected.length > 0 ? 'text-primary fill-primary/20' : ''}`} />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="z-50 w-56 bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+      <PopoverContent className="z-50 w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
         <input 
           type="text" 
           placeholder="Search filters..."
@@ -73,7 +74,121 @@ function FilterPopover({ options = [], selected = [], onChange, onClear }) {
     </Popover>
   );
 }
+const getHierarchyPathParts = (item, allOptions) => {
+  const pathNames = [];
+  const itemId = item.Id ?? item.id;
+  const itemType = item.Type ?? item.type;
+  
+  let current = allOptions.find(o => 
+    (o.Id ?? o.id) === itemId && 
+    (o.Type ?? o.type).toLowerCase() === itemType.toLowerCase()
+  );
+  
+  const visited = new Set();
+  
+  while (current) {
+    const uniqueKey = `${current.Type ?? current.type}-${current.Id ?? current.id}`;
+    if (visited.has(uniqueKey)) break;
+    visited.add(uniqueKey);
+    
+    pathNames.push(current.Name ?? current.name);
+    
+    const parentId = current.ParentId ?? current.parentId;
+    if (!parentId) break;
+    
+    const currentType = (current.Type ?? current.type).toLowerCase();
+    let parentType = "";
+    if (currentType === "team") parentType = "section";
+    else if (currentType === "section") parentType = "department";
+    else if (currentType === "department") parentType = "group";
+    
+    current = allOptions.find(o => 
+      (o.Id ?? o.id) === parentId && 
+      (o.Type ?? o.type).toLowerCase() === parentType
+    );
+  }
+  
+  return pathNames.reverse();
+};
 
+function MultiSelectUserPopover({ data = [], fullOptions = [], selectedValues = [], onSelect, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const filtered = data.filter(item => {
+    const main = item.name || '';
+    return main.toLowerCase().includes(search.toLowerCase());
+  });
+
+  return (
+    <RadixPopover.Root open={open} onOpenChange={(val) => { setOpen(val); if (!val) setSearch(''); }}>
+      <RadixPopover.Trigger asChild>
+        <button className="w-full sm:w-56 flex items-center justify-between text-xs bg-background border border-primary/20 rounded-lg p-2 text-foreground focus:ring-2 focus:ring-primary focus:outline-none min-h-9 cursor-pointer text-left font-semibold">
+          <span className="truncate">
+            {selectedValues.length === 0 
+              ? placeholder 
+              : `${selectedValues.length} Selected`}
+          </span>
+          <ChevronDown className="w-4 h-4 ml-2 shrink-0 opacity-60 text-primary" />
+        </button>
+      </RadixPopover.Trigger>
+      <RadixPopover.Portal>
+        <RadixPopover.Content className="z-[9999] w-[var(--radix-popover-trigger-width)] bg-card border border-primary/20 rounded-xl shadow-xl p-2" sideOffset={5} align="start">
+          <input 
+            type="text" 
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full text-xs bg-background border border-primary/20 rounded-lg p-1.5 mb-2 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+          />
+          <div className="max-h-40 overflow-y-auto space-y-1">
+            <button
+              type="button"
+              onClick={() => onSelect([])}
+              className="w-full text-left rounded-md px-2.5 py-1.5 text-xs text-primary font-bold hover:bg-primary/5 cursor-pointer"
+            >
+              Clear All Selection
+            </button>
+            {filtered.map((item, idx) => {
+              const isSelected = selectedValues.includes(String(item.id));
+              const itemForPath = { Id: Number(item.id), Type: item.type || 'Team' };
+              const pathParts = getHierarchyPathParts(itemForPath, fullOptions);
+
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    const next = isSelected 
+                      ? selectedValues.filter(v => v !== String(item.id))
+                      : [...selectedValues, String(item.id)];
+                    onSelect(next);
+                  }}
+                  className={`w-full text-left rounded-md px-2.5 py-1.5 flex items-center justify-between transition text-xs cursor-pointer ${isSelected ? 'bg-primary/20 text-foreground font-semibold' : 'hover:bg-primary/5 text-muted-foreground hover:text-foreground'}`}
+                >
+                  <div className="flex flex-col text-left py-0.5 max-w-[85%]">
+                    <span className="font-bold text-xs truncate">{item.name}</span>
+                    {pathParts.length > 1 && (
+                      <div className="text-[9px] text-muted-foreground mt-0.5 whitespace-normal opacity-85 leading-tight">
+                        {pathParts.slice(0, -1).map((part, pIdx) => (
+                          <span key={pIdx} className="inline-block whitespace-nowrap">
+                            {pIdx > 0 && " ➔ "}
+                            {part}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {isSelected && <CheckSquare className="w-3.5 h-3.5 text-primary shrink-0 ml-1" />}
+                </button>
+              );
+            })}
+          </div>
+        </RadixPopover.Content>
+      </RadixPopover.Portal>
+    </RadixPopover.Root>
+  );
+}
 export default function SubcategoryTaskView() {
   const { isLoading: isAccessLoading } = useAccessCheck(PAGE_ID_FOR_THIS_FORM);
   const { hasAccess: isAdmin, isLoading: isAdminLoading } = useAdminAccessCheck(PAGE_ID_FOR_THIS_FORM);
@@ -82,7 +197,11 @@ export default function SubcategoryTaskView() {
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(null);
   const [view, setView] = useState('list');
   const [tableLoading, setTableLoading] = useState(false);
-
+  const [role, setRole] = useState('');
+  const [hierarchyOptions, setHierarchyOptions] = useState([]);
+  const [teamsList, setTeamsList] = useState([]);
+  const [selectedSections, setSelectedSections] = useState([]);
+  const [selectedTeamsList, setSelectedTeamsList] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, size: 100 });
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeId, setEmployeeId] = useState('');
@@ -125,12 +244,52 @@ export default function SubcategoryTaskView() {
         const ls = new SecureLS({ encodingType: "aes" });
         const val = ls.get('employee_id');
         setEmployeeId(val || '');
+        const userRole = ls.get('role');
+        setRole(userRole || '');
       } catch (e) {
         console.error(e);
       }
     }
   }, []);
+  const safeRole = String(role || '').toUpperCase();
+  const isHOD = safeRole === 'HOD';
+  const isHOS = safeRole === 'HOS';
+  useEffect(() => {
+    const fetchHierarchyOptions = async () => {
+      try {
+        const res = await fetch('/api/user-hierarchy?action=options');
+        const json = await res.json();
+        if (res.ok && json.data) setHierarchyOptions(json.data);
+      } catch (e) {}
+    };
+    
+    const fetchTeams = async () => {
+      try {
+        const res = await fetch('/api/tasks/team-performance?action=teams');
+        const json = await res.json();
+        if (res.ok && json.data) setTeamsList(json.data);
+      } catch (e) {}
+    };
 
+    fetchHierarchyOptions();
+    fetchTeams();
+  }, []);
+
+  const sectionsList = useMemo(() => {
+    return hierarchyOptions
+      .filter(opt => String(opt.Type || opt.type || '').toLowerCase() === 'section')
+      .map(s => ({ id: s.Id ?? s.id, name: s.Name ?? s.name, type: 'Section' }));
+  }, [hierarchyOptions]);
+
+  const availableTeamsList = useMemo(() => {
+    if (selectedSections.length === 0) {
+      return teamsList.map(t => ({ ...t, type: 'Team' }));
+    }
+    return teamsList.filter(t => {
+      const teamNode = hierarchyOptions.find(o => (o.Id == (t.Id ?? t.id)) && String(o.Type || '').toLowerCase() === 'team');
+      return teamNode && selectedSections.includes(String(teamNode.ParentId ?? teamNode.parentId));
+    }).map(t => ({ ...t, type: 'Team' }));
+  }, [teamsList, hierarchyOptions, selectedSections]);
   useEffect(() => {
     const handleResize = () => {
       setNumberOfMonths(window.innerWidth < 768 ? 1 : 2);
@@ -152,14 +311,17 @@ export default function SubcategoryTaskView() {
     if (view === 'list' && dateRange?.from && dateRange?.to) {
       fetchData();
     }
-  }, [pagination.page, pagination.size, searchTerm, view, employeeId, dateRange]);
+  }, [pagination.page, pagination.size, searchTerm, view, employeeId, dateRange, role, selectedSections, selectedTeamsList]);
 
   const fetchData = async () => {
     try {
       setTableLoading(true);
       const start = formatLocalDate(dateRange.from);
       const end = formatLocalDate(dateRange.to);
-      const res = await fetch(`/api/tasks/task-assignments?action=list&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&employeeId=${employeeId || ''}&startDate=${start}&endDate=${end}&loggedInEmployeeId=${employeeId || ''}`);
+      const sectionIdsStr = selectedSections.join(',');
+      const teamIdsStr = selectedTeamsList.join(',');
+      const res = await fetch(`/api/tasks/task-assignments?action=list&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&startDate=${start}&endDate=${end}&role=${role}&sectionIds=${sectionIdsStr}&teamIds=${teamIdsStr}&loggedInEmployeeId=${employeeId || ''}`);
+      // const res = await fetch(`/api/tasks/task-assignments?action=list&page=${pagination.page}&size=${pagination.size}&search=${searchTerm}&employeeId=${employeeId || ''}&startDate=${start}&endDate=${end}&loggedInEmployeeId=${employeeId || ''}`);
       const json = await res.json();
       if (res.ok && json.data) {
         setDataList(json.data);
@@ -284,6 +446,28 @@ export default function SubcategoryTaskView() {
             <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 rounded-full">{totalCount} Total</span>
           </div>
           <div className="flex flex-wrap sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            {isHOD && (
+            <div className="flex flex-col gap-1 w-full sm:w-auto">
+              <MultiSelectUserPopover 
+                data={sectionsList}
+                fullOptions={hierarchyOptions}
+                selectedValues={selectedSections}
+                onSelect={(vals) => { setSelectedSections(vals); setSelectedTeamsList([]); }}
+                placeholder="All Sections"
+              />
+            </div>
+          )}
+          {(isHOD || isHOS) && (
+            <div className="flex flex-col gap-1 w-full sm:w-auto">
+              <MultiSelectUserPopover 
+                data={availableTeamsList}
+                fullOptions={hierarchyOptions}
+                selectedValues={selectedTeamsList}
+                onSelect={setSelectedTeamsList}
+                placeholder="All Teams"
+              />
+            </div>
+          )}
             <div className={cn("grid gap-2 w-full sm:w-auto")}>
               <Popover>
                 <PopoverTrigger asChild>
