@@ -442,7 +442,16 @@ export default function SubcategoryTaskView() {
   const isHOD = role === 'HOD';
   const isHOS = role === 'HOS';
   const isTeamLead = role === 'Team Leader' || role === 'Team Lead';
-  const isNormal = !isHOD && !isHOS;
+  // const isNormal = !isHOD && !isHOS;
+  const isNormal = !isHOD && !isHOS && !isTeamLead;
+  const visibleTasks = React.useMemo(() => {
+    if (!isNormal) return dataList;
+    return dataList.filter(t => {
+      const isMyTask = t.AssignedEmployeeId && String(t.AssignedEmployeeId) === String(employeeId);
+      const isUnassignedTask = !t.AssignedUserId || parseInt(t.AssignedUserId) === 0;
+      return isMyTask || isUnassignedTask;
+    });
+  }, [dataList, isNormal, employeeId]);
   const fetchHierarchyOptions = async () => {
     try {
       const res = await fetch('/api/user-hierarchy?action=options');
@@ -883,7 +892,8 @@ export default function SubcategoryTaskView() {
   const getUniqueTaskAssignees = () => {
     const list = [];
     const seen = new Set();
-    dataList.forEach(t => {
+    // dataList.forEach(t => {
+    visibleTasks.forEach(t => {
       if (t.AssignedUserId && !seen.has(t.AssignedUserId)) {
         seen.add(t.AssignedUserId);
         list.push({ id: t.AssignedUserId, username: t.AssignedUsername });
@@ -1022,7 +1032,7 @@ export default function SubcategoryTaskView() {
 
           <div className="h-4 w-[1px] bg-primary/20 hidden md:block" />
 
-          <div className="flex items-center gap-1.5">
+          <div hidden={isNormal} className="flex items-center gap-1.5">
             <div className="flex items-center -space-x-2 overflow-visible">
               {uniqueAssignees.slice(0, 6).map(usr => {
                 const isSelected = selectedAssignees.includes(String(usr.id));
@@ -1198,7 +1208,8 @@ export default function SubcategoryTaskView() {
         >
           <div className="flex gap-2 h-[calc(100vh-270px)] items-stretch w-full md:min-w-0">
             {statuses.map(col => {
-              const columnTasks = dataList.filter(t => {
+              // const columnTasks = dataList.filter(t => {
+              const columnTasks = visibleTasks.filter(t => {
                 const matchesStatus = t.StatusId === col.id || (!t.StatusId && col.name === 'To Do');
                 if (selectedAssignees.length === 0) return matchesStatus;
 
